@@ -1,12 +1,12 @@
 package arc.examples
 
+import arc.examples.ArcPath.absolute
 import arc.examples.modules.LotsRaiseModule
 import arc.funpay.FunpayApplication
 import arc.funpay.event.LotsRaiseEvent
 import arc.funpay.event.NewOrderEvent
 import arc.funpay.event.NewPurchaseEvent
 import arc.funpay.event.pre.PreLotsRaiseEvent
-import arc.funpay.ext.ArcPath.local
 import arc.funpay.models.funpay.Category
 import arc.funpay.system.FunpayAPI
 import com.charleskorn.kaml.Yaml
@@ -27,11 +27,12 @@ import kotlinx.serialization.decodeFromString
  * 8. Starts the application
  */
 suspend fun main() {
-    val configFile = local("config.yml").readText()
+    val configFile = absolute("D:\\Arc-funpay\\arc-examples\\src\\main\\resources\\config.yml").readText()
     val config = Yaml.default.decodeFromString<Config>(configFile)
 
     val app = FunpayApplication(config.token)
 
+    app.start()
     // Account info
 
     val api = app.koin.get<FunpayAPI>()
@@ -95,6 +96,4 @@ suspend fun main() {
     app.eventBus.on<NewPurchaseEvent> {
         println("NewPurchaseEvent: ${it.oldCount} -> ${it.newCount}")
     }
-
-    app.start()
 }
