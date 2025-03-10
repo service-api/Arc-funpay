@@ -1,7 +1,9 @@
 package arc.funpay.system.api
 
+import arc.funpay.models.other.Proxy
 import io.ktor.client.*
-import io.ktor.client.engine.cio.*
+import io.ktor.client.engine.*
+import io.ktor.client.engine.okhttp.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
@@ -13,17 +15,23 @@ import kotlinx.serialization.json.Json
 /**
  * A client for making HTTP requests to the Funpay API.
  */
-class FunpayHttpClient {
+class FunpayHttpClient(
+    val proxyData: Proxy? = null
+) {
     /**
-     * The HTTP client instance configured with CIO engine and JSON content negotiation.
+     * The HTTP client instance configured with OkHttp engine and JSON content negotiation.
      */
-    val client = HttpClient(CIO) {
+    val client = HttpClient(OkHttp) {
+        proxyData?.let {
+            engine {
+                proxy = when (it) {
+                    is Proxy.HttpProxy -> ProxyBuilder.http(Url(it.url))
+                    is Proxy.SocksProxy -> ProxyBuilder.socks(it.host, it.port)
+                }
+            }
+        }
         install(ContentNegotiation) {
-            json(Json {
-                prettyPrint = true
-                isLenient = true
-                ignoreUnknownKeys = true
-            })
+            json(Json { prettyPrint = true; isLenient = true; ignoreUnknownKeys = true })
         }
     }
 

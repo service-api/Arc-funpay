@@ -3,6 +3,7 @@ package arc.funpay
 import arc.funpay.event.ReadyEvent
 import arc.funpay.event.api.EventBus
 import arc.funpay.models.funpay.Account
+import arc.funpay.models.other.Proxy
 import arc.funpay.modules.api.Module
 import arc.funpay.modules.funpay.OrderEventModule
 import arc.funpay.system.FunpayAPI
@@ -20,14 +21,15 @@ import kotlin.reflect.KClass
  * @property goldToken The token used for authentication.
  */
 class FunpayApplication(
-    val goldToken: String
+    val goldToken: String,
+    val proxy: Proxy? = null
 ) {
     var isRunnable = false
         private set
     val logger = LoggerFactory.getLogger(this::class.qualifiedName)
     val koin = startKoin {
         modules(module {
-            single { FunpayHttpClient() }
+            single { FunpayHttpClient(proxy) }
         })
     }.koin
 

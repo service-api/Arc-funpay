@@ -22,7 +22,7 @@ import kotlinx.serialization.json.*
  */
 class FunpayAPI(
     val client: FunpayHttpClient,
-    val account: Account
+    val account: Account,
 ) {
     /**
      * Retrieves account information.
@@ -109,7 +109,7 @@ class FunpayAPI(
         val json = Json.parseToJsonElement(responseBody).jsonObject
 
         return if ("msg" in json) {
-            RaiseResponse(true, json["msg"]!!.jsonPrimitive.content)
+            RaiseResponse(true, json["msg"]?.jsonPrimitive?.content ?: "None")
         } else {
             RaiseResponse(false, "Ошибка получения ответа от сервера")
         }
