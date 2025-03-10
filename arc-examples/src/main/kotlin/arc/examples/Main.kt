@@ -31,6 +31,11 @@ suspend fun main() {
     val config = Yaml.default.decodeFromString<Config>(configFile)
 
     val app = FunpayApplication(config.token)
+    // Http proxy:
+    //  FunpayApplication(config.token, Proxy.HttpProxy("Here http proxy"))
+    // Socks proxy:
+    // FunpayApplication(config.token, Proxy.SocksProxy("host", 1080))
+
 
     app.start()
     // Account info
