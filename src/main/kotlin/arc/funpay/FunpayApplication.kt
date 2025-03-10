@@ -44,6 +44,7 @@ class FunpayApplication(
         val account = Account.fromToken(goldToken, koin.get())
         if (account == null || !account.isValid()) {
             logger.error("Invalid token")
+            stop()
             return
         }
 
