@@ -28,15 +28,6 @@ This project provides an implementation of the **Funpay API** in Kotlin, enablin
    implementation("arc:funpay:1.0.2")
    ```  
 
-## ⚙️ Configuration
-
-Create a `config.yml` file in the project root with the following structure:
-
-```yaml
-token: "YOUR_FUNPAY_API_TOKEN"
-```  
-
-Replace `"YOUR_FUNPAY_API_TOKEN"` with your actual API token.
 
 ## 🚀 Usage
 
@@ -48,7 +39,7 @@ suspend fun main() {
     val configFile = local("config.yml").readText()
     val config = Yaml.default.decodeFromString<Config>(configFile)
     
-    val app = FunpayApplication(config.token)
+    val app = FunpayApplication(config.token) // Golden key in cookies
 
     val api = app.koin.get<FunpayAPI>()
     val accountInfo = api.getInfo()
