@@ -115,6 +115,26 @@ class FunpayAPI(
         )
     }
 
+    suspend fun getChatNodeByUsername(username: String): String? {
+        val html = client.get("/chat/", cookies = mapOf(
+            "golden_key" to account.goldenKey,
+            "PHPSESSID" to account.phpSessionId
+        )).bodyAsText()
+        val document = Jsoup.parse(html)
+        val contacts = document.select("a.contact-item")
+
+        for (contact in contacts) {
+            val name = contact.selectFirst(".media-user-name")?.text()?.trim()
+            if (name.equals(username, ignoreCase = true)) {
+                val href = contact.attr("href") // Например, https://funpay.com/chat/?node=161986257
+                val nodeId = Regex("""node=(\d+)""").find(href)?.groupValues?.get(1)
+                return nodeId
+            }
+        }
+
+        return null
+    }
+
     /**
      * Retrieves the orders for the account.
      *

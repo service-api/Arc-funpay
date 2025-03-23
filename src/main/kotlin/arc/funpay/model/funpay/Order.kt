@@ -8,6 +8,7 @@ data class Order(
     val description: String,
     val category: String,
     val buyer: String,
+    val buyerId: String,
     val status: OrderStatus,
     val amount: Double
 )

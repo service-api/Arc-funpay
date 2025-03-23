@@ -34,15 +34,21 @@ class OrderStatusModule : Module() {
             val orderId = el.selectFirst(".tc-order")?.text()?.removePrefix("#") ?: return@mapNotNull null
             val description = el.selectFirst(".order-desc > div:nth-child(1)")?.text() ?: return@mapNotNull null
             val category = el.selectFirst(".order-desc > .text-muted")?.text() ?: ""
-            val buyer = el.selectFirst(".media-user-name span")?.text() ?: return@mapNotNull null
+            val buyerEl = el.selectFirst(".media-user-name .pseudo-a") ?: return@mapNotNull null
+            val buyer = buyerEl.text()
+            val href = buyerEl.attr("data-href")
+
+            val userId = Regex("""\d+""").find(href)?.value ?: return@mapNotNull null
+
             val status = el.selectFirst(".tc-status")?.text() ?: return@mapNotNull null
             val priceText = el.selectFirst(".tc-price")?.text() ?: return@mapNotNull null
             val price = priceText.replace("₽", "").replace(",", ".").trim().toDoubleOrNull() ?: return@mapNotNull null
             val date = parseDate(dateText, now) ?: return@mapNotNull null
 
-            Order(date, orderId, description, category, buyer, OrderStatus.from(status), price)
+            Order(date, orderId, description, category, buyer, userId, OrderStatus.from(status), price)
         }
     }
+
 
     fun parseDate(text: String, now: LocalDate): LocalDate? {
         val lower = text.lowercase()
