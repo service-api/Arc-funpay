@@ -78,9 +78,10 @@ class OrderStatusModule : Module() {
             }
         }
     }
+
     fun getOpenedOrders(): List<Order> = orders.filter { it.status == OrderStatus.OPEN }
 
-    fun getAllOrders(): List<Order> = orders.filter { it.status != OrderStatus.REFUND }
+    fun getAllOrders(): List<Order> = orders
 
     fun getRefundOrders(): List<Order> = orders.filter { it.status == OrderStatus.REFUND }
 
