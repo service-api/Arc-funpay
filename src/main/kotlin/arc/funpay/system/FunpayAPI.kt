@@ -19,6 +19,10 @@ import org.jsoup.parser.Parser
 /**
  * Class representing the Funpay API.
  *
+ * This class provides methods to interact with the Funpay API,
+ * such as retrieving account information, sending messages,
+ * getting order details, refunding orders, and raising lots.
+ *
  * @property client The HTTP client used for making requests.
  * @property account The account associated with the API.
  */
@@ -29,9 +33,12 @@ class FunpayAPI(
     /**
      * Retrieves account information.
      *
+     * This function fetches account details such as user ID, username, and balance
+     * from the Funpay API.
+     *
      * @return An AccountInfo object containing user ID, username, and balance.
      */
-    suspend fun getInfo(): AccountInfo = runBlocking {
+    fun getInfo(): AccountInfo = runBlocking {
         val html = client.get("/", cookies = mapOf("golden_key" to account.goldenKey)).bodyAsText()
 
         val rawJsonEncoded = Jsoup.parse(html).body().attr("data-app-data")
@@ -59,9 +66,59 @@ class FunpayAPI(
         AccountInfo(userId, username, primaryBalance)
     }
 
+    /**
+     * Sends a message to a specific chat node.
+     *
+     * @param chatNode The identifier of the chat node.
+     * @param content The content of the message to be sent.
+     */
+    suspend fun sendMessage(chatNode: String, content: String) {
+        val requestJson = buildJsonObject {
+            put("action", "chat_message")
+            putJsonObject("data") {
+                put("node", chatNode)
+                put("last_message", "-1")
+                put("content", content)
+            }
+        }
+
+        val objectsArray = buildJsonArray {
+            addJsonObject {
+                put("type", "chat_node")
+                put("id", chatNode)
+                put("tag", "00000000")
+                putJsonObject("data") {
+                    put("node", chatNode)
+                    put("last_message", "-1")
+                    put("content", "")
+                }
+            }
+        }
+
+
+        client.post(
+            endpoint = "/runner/",
+            headers = mapOf(
+                HttpHeaders.Accept to "*/*",
+                HttpHeaders.ContentType to "application/x-www-form-urlencoded; charset=UTF-8",
+                "X-Requested-With" to "XMLHttpRequest"
+            ),
+            cookies = mapOf(
+                "golden_key" to account.goldenKey,
+                "PHPSESSID" to account.phpSessionId
+            ),
+            body = mapOf(
+                "objects" to objectsArray.toString(),
+                "request" to requestJson.toString(),
+                "csrf_token" to account.csrfToken,
+            )
+        )
+    }
 
     /**
      * Retrieves the orders for the account.
+     *
+     * This function fetches the buyer and seller order counts from the Funpay API.
      *
      * @return An Orders object containing the buyer and seller counts.
      * @throws Exception if the request fails or the response is invalid.
@@ -71,7 +128,7 @@ class FunpayAPI(
         val jsonRequest = buildJsonArray {
             addJsonObject {
                 put("type", JsonPrimitive("orders_counters"))
-                put("id", JsonPrimitive(9479684))
+                put("id", JsonPrimitive(account.userId))
                 put("tag", JsonPrimitive(""))
                 put("data", JsonPrimitive(false))
             }
@@ -98,11 +155,39 @@ class FunpayAPI(
     }
 
     /**
+     * Refunds a specific order.
+     *
+     * @param orderId The ID of the order to be refunded.
+     */
+    suspend fun refundOrder(orderId: String) {
+        client.post(
+            endpoint = "/orders/refund",
+            headers = mapOf(
+                HttpHeaders.Accept to "*/*",
+                HttpHeaders.ContentType to "application/x-www-form-urlencoded; charset=UTF-8",
+                "X-Requested-With" to "XMLHttpRequest"
+            ),
+            cookies = mapOf(
+                "golden_key" to account.goldenKey,
+                "PHPSESSID" to account.phpSessionId
+            ),
+            body = mapOf(
+                "id" to orderId,
+                "csrf_token" to account.csrfToken,
+            )
+        )
+    }
+
+    /**
      * Raises lots for a specific game and node.
+     *
+     * This function sends a request to raise the lots for a given game and node.
      *
      * @param gameId The ID of the game.
      * @param nodeId The ID of the node.
      * @return A RaiseResponse object indicating the success or failure of the operation.
+     *         If successful, the message from the response is included.
+     *         If unsuccessful, a default error message is provided.
      * @throws Exception if the request fails or the response is invalid.
      */
     suspend fun raiseLots(gameId: String, nodeId: String): RaiseResponse {

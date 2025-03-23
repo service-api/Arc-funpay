@@ -2,6 +2,7 @@
 import arc.funpay.event.api.Cancelable
 import arc.funpay.event.api.EventBus
 import arc.funpay.event.api.FunpayEvent
+import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
@@ -18,11 +19,13 @@ class EventBussTest {
 
         var isReceived = false
 
-        eventBus.on<TestEvent> {
-            isReceived = true
-        }
+        runBlocking {
+            eventBus.on<TestEvent> {
+                isReceived = true
+            }
 
-        eventBus.post(TestEvent())
+            eventBus.post(TestEvent())
+        }
 
         assertTrue(isReceived)
     }
@@ -33,14 +36,14 @@ class EventBussTest {
         val eventBus = EventBus()
 
         val pre = PreTestEvent()
+        runBlocking {
+            eventBus.on<PreTestEvent> {
+                it.isCancelled = true
+            }
 
-        eventBus.on<PreTestEvent> {
-            it.isCancelled = true
+            eventBus.post(pre)
+            eventBus.post(TestEvent())
         }
-
-        eventBus.post(pre)
-        eventBus.post(TestEvent())
-
         assertTrue(pre.isCancelled)
 
     }

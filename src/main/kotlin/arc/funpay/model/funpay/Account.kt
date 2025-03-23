@@ -21,7 +21,8 @@ import org.jsoup.parser.Parser
 data class Account(
     val userId: Long,
     val goldenKey: String,
-    val phpSessionId: String
+    val phpSessionId: String,
+    val csrfToken: String
 ) {
     fun isValid() = userId != 0L && goldenKey.isNotBlank() && phpSessionId != "0"
 
@@ -41,14 +42,15 @@ data class Account(
                 if (parts != null && parts.size == 2 && parts[0].trim() == "PHPSESSID") parts[1] else null
             }
 
-            println(rawJson)
 
             return try {
                 val jsonElement = Json.parseToJsonElement(rawJson)
                 if (jsonElement !is kotlinx.serialization.json.JsonObject) return null
+
                 val id = jsonElement.jsonObject["userId"]?.jsonPrimitive?.longOrNull ?: return null
-                println(id)
-                Account(id, goldKey, phpSessionId ?: "0")
+                val csrfToken = jsonElement.jsonObject["csrf-token"]?.jsonPrimitive?.content ?: ""
+
+                Account(id, goldKey, phpSessionId ?: "0", csrfToken)
             } catch (e: Exception) {
                 null
             }

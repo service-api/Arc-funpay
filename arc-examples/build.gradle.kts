@@ -17,6 +17,7 @@ repositories {
 }
 
 dependencies {
+
     implementation("com.charleskorn.kaml:kaml:0.72.0")
     implementation(project(":"))
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")

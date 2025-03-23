@@ -85,7 +85,7 @@ class FunpayApplication(
         scope.launch {
             while (isRunnable) {
                 modules.forEach { it.onTick() }
-                delay(60000L * 5) // 5 minutes
+                delay(1000L * 10) // 10 seconds
             }
             scope.cancel()
         }

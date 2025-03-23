@@ -7,6 +7,7 @@ import arc.funpay.event.LotsRaiseEvent
 import arc.funpay.event.NewOrderEvent
 import arc.funpay.event.NewPurchaseEvent
 import arc.funpay.event.pre.PreLotsRaiseEvent
+import arc.funpay.model.funpay.Account
 import arc.funpay.model.funpay.Category
 import arc.funpay.system.FunpayAPI
 import com.charleskorn.kaml.Yaml
@@ -36,19 +37,25 @@ suspend fun main() {
     // Socks proxy:
     // FunpayApplication(config.token, Proxy.SocksProxy("host", 1080))
 
-
     app.start()
-    // Account info
 
     val api = app.koin.get<FunpayAPI>()
+    val result = api.sendMessage("161986257", "Hello, world!")
+    if (result != null) {
+        println("Отправка успешна.")
+    }
+    // Account info
+
     val accountInfo = api.getInfo()
 
+    val account = app.koin.get<Account>()
     println("""
         Account info:
         - Balance: ${accountInfo.balance.amount}
         - Currency: ${accountInfo.balance.currency}
         - ID: ${accountInfo.id}
         - Name: ${accountInfo.name}
+        - Token: ${account.csrfToken}
     """.trimIndent())
 
     // Order count
@@ -101,4 +108,5 @@ suspend fun main() {
     app.eventBus.on<NewPurchaseEvent> {
         println("NewPurchaseEvent: ${it.oldCount} -> ${it.newCount}")
     }
+
 }
