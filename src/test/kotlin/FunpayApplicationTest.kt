@@ -1,5 +1,5 @@
 import arc.funpay.FunpayApplication
-import arc.funpay.modules.api.Module
+import arc.funpay.module.api.Module
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
 import org.koin.core.context.stopKoin

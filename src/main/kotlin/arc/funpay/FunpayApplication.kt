@@ -2,10 +2,11 @@ package arc.funpay
 
 import arc.funpay.event.ReadyEvent
 import arc.funpay.event.api.EventBus
-import arc.funpay.models.funpay.Account
-import arc.funpay.models.other.Proxy
-import arc.funpay.modules.api.Module
-import arc.funpay.modules.funpay.OrderEventModule
+import arc.funpay.model.funpay.Account
+import arc.funpay.model.other.Proxy
+import arc.funpay.module.api.Module
+import arc.funpay.module.funpay.OrderEventModule
+import arc.funpay.module.funpay.OrderStatusModule
 import arc.funpay.system.FunpayAPI
 import arc.funpay.system.api.FunpayHttpClient
 import kotlinx.coroutines.*
@@ -34,7 +35,8 @@ class FunpayApplication(
     }.koin
 
     val modules = hashSetOf<Module>(
-        OrderEventModule()
+        OrderEventModule(),
+        OrderStatusModule()
     )
 
     val eventBus = EventBus()
@@ -83,7 +85,7 @@ class FunpayApplication(
         scope.launch {
             while (isRunnable) {
                 modules.forEach { it.onTick() }
-                delay(10000L) // 10 seconds
+                delay(60000L * 5) // 5 minutes
             }
             scope.cancel()
         }

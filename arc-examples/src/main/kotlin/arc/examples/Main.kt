@@ -7,7 +7,7 @@ import arc.funpay.event.LotsRaiseEvent
 import arc.funpay.event.NewOrderEvent
 import arc.funpay.event.NewPurchaseEvent
 import arc.funpay.event.pre.PreLotsRaiseEvent
-import arc.funpay.models.funpay.Category
+import arc.funpay.model.funpay.Category
 import arc.funpay.system.FunpayAPI
 import com.charleskorn.kaml.Yaml
 import kotlinx.serialization.decodeFromString
@@ -27,7 +27,7 @@ import kotlinx.serialization.decodeFromString
  * 8. Starts the application
  */
 suspend fun main() {
-    val configFile = absolute("D:\\Arc-funpay\\arc-examples\\src\\main\\resources\\config.yml").readText()
+    val configFile = absolute("D:\\Java\\Arc-funpay\\arc-examples\\src\\main\\resources\\config.yml").readText()
     val config = Yaml.default.decodeFromString<Config>(configFile)
 
     val app = FunpayApplication(config.token)

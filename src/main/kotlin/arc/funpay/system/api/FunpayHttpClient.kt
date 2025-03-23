@@ -1,6 +1,6 @@
 package arc.funpay.system.api
 
-import arc.funpay.models.other.Proxy
+import arc.funpay.model.other.Proxy
 import io.ktor.client.*
 import io.ktor.client.engine.*
 import io.ktor.client.engine.okhttp.*

@@ -2,17 +2,19 @@ package arc.funpay.system
 
 import arc.funpay.ext.extract
 import arc.funpay.ext.parse
-import arc.funpay.models.funpay.Account
-import arc.funpay.models.funpay.AccountInfo
-import arc.funpay.models.other.Balance
-import arc.funpay.models.other.Currency
-import arc.funpay.models.other.Orders
-import arc.funpay.models.response.RaiseResponse
+import arc.funpay.model.funpay.Account
+import arc.funpay.model.funpay.AccountInfo
+import arc.funpay.model.other.Balance
+import arc.funpay.model.other.Currency
+import arc.funpay.model.other.Orders
+import arc.funpay.model.response.RaiseResponse
 import arc.funpay.system.api.FunpayHttpClient
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.*
+import org.jsoup.Jsoup
+import org.jsoup.parser.Parser
 
 /**
  * Class representing the Funpay API.
@@ -22,7 +24,7 @@ import kotlinx.serialization.json.*
  */
 class FunpayAPI(
     val client: FunpayHttpClient,
-    val account: Account,
+    val account: Account
 ) {
     /**
      * Retrieves account information.
@@ -30,20 +32,33 @@ class FunpayAPI(
      * @return An AccountInfo object containing user ID, username, and balance.
      */
     suspend fun getInfo(): AccountInfo = runBlocking {
-        val html = client.get().bodyAsText()
+        val html = client.get("/", cookies = mapOf("golden_key" to account.goldenKey)).bodyAsText()
 
-        val username = html.extract("""<div class="user-link-name">(.*?)</div>""")
-        val balanceText = html.extract("""<span class="badge badge-balance">(.*?)</span>""")
+        val rawJsonEncoded = Jsoup.parse(html).body().attr("data-app-data")
+        val rawJson = Parser.unescapeEntities(rawJsonEncoded, false)
 
-        val (balance, currency) = Regex("""(\d+)\s*([^\d\s]+)""").find(balanceText)
-            ?.destructured?.let { (b, c) -> b.toIntOrNull() to Currency.fromString(c) }
-            ?: (0 to Currency.RUB)
+        val userId = try {
+            val jsonElement = Json.parseToJsonElement(rawJson)
+            jsonElement.jsonObject["userId"]?.jsonPrimitive?.longOrNull ?: 0L
+        } catch (e: Exception) {
+            0L
+        }
 
-        val userId = Json.parseToJsonElement(html.extract("""<body data-app-data='(.*?)'""", "{}"))
-            .jsonObject["userId"]?.jsonPrimitive?.content ?: ""
+        val username = html.extract("""<div class=\"user-link-name\">(.*?)<\/div>""")
 
-        AccountInfo(userId, username, Balance(balance ?: 0, currency))
+        val balances = Regex("""<span class="badge badge-balance">([\d.,]+)\s*([^\d\s<]+)</span>""")
+            .findAll(html)
+            .map { matchResult ->
+                val (value, currency) = matchResult.destructured
+                Balance(value.replace(",", ".").toDouble(), Currency.fromString(currency))
+            }
+            .toList()
+
+        val primaryBalance = balances.firstOrNull() ?: Balance(0.0, Currency.RUB)
+
+        AccountInfo(userId, username, primaryBalance)
     }
+
 
     /**
      * Retrieves the orders for the account.

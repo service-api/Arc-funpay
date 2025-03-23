@@ -1,4 +1,4 @@
-package arc.funpay.models.other
+package arc.funpay.model.other
 
 sealed class Proxy {
     data class HttpProxy(

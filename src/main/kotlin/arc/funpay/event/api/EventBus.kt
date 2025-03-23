@@ -17,7 +17,7 @@ class EventBus {
      * @param T The type of the event.
      * @param action The event listener to register.
      */
-    inline fun <reified T : FunpayEvent> on(noinline action: EventListener<T>) {
+    suspend inline fun <reified T : FunpayEvent> on(noinline action: EventListener<T>) {
         val clazz = T::class.java
         listeners.computeIfAbsent(clazz) { mutableListOf() }.add { action(it as T) }
     }

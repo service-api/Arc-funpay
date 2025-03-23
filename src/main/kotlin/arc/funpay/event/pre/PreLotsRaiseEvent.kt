@@ -2,7 +2,7 @@ package arc.funpay.event.pre
 
 import arc.funpay.event.api.Cancelable
 import arc.funpay.event.api.FunpayEvent
-import arc.funpay.models.funpay.Category
+import arc.funpay.model.funpay.Category
 
 /**
  * Event triggered before raising lots in a specific category.

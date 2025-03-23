@@ -5,8 +5,8 @@ import arc.funpay.event.pre.PreLotsRaiseEvent
 import arc.funpay.ext.extractNumber
 import arc.funpay.ext.now
 import arc.funpay.ext.parseTiming
-import arc.funpay.models.funpay.Category
-import arc.funpay.modules.api.Module
+import arc.funpay.model.funpay.Category
+import arc.funpay.module.api.Module
 
 /**
  * Module responsible for raising lots in specified categories.

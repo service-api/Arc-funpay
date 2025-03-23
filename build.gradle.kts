@@ -19,7 +19,7 @@ dependencies {
     implementation(rootProject.libs.ktor.serialization)
     implementation(rootProject.libs.kotlinx.serialization)
     implementation(rootProject.libs.jsoup)
-    implementation(rootProject.libs.logback)
+    implementation(rootProject.libs.slf4j)
     implementation(rootProject.libs.koin)
 
     // Test
@@ -58,7 +58,7 @@ publishing {
         create<MavenPublication>("maven") {
             groupId = "arc"
             artifactId = "funpay"
-            version = "1.0.6"
+            version = "1.2.1"
             from(components["java"])
             artifact(sourcesJar.get())
             artifact(javadocJar.get())
