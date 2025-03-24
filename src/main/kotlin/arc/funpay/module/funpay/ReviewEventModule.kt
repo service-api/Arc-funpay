@@ -1,7 +1,6 @@
 package arc.funpay.module.funpay
 
 import arc.funpay.event.NewReviewEvent
-import arc.funpay.event.api.FunpayEvent
 import arc.funpay.model.funpay.Account
 import arc.funpay.module.api.Module
 import arc.funpay.system.api.FunpayHttpClient
@@ -47,39 +46,32 @@ class ReviewEventModule : Module() {
      * Executes on each tick of the module.
      * Fetches new review events and posts them to the event bus.
      */
+    val lastReviews = mutableListOf<Review>()
+
     override suspend fun onTick() {
-        val events = fetchEvents()
-        events.forEach { eventBus.post(it) }
-    }
-
-    /**
-     * Fetches and processes new review events.
-     *
-     * On first run, it just establishes the latest review ID without generating events.
-     * On subsequent runs, it compares the latest review with the previously saved one
-     * and generates events for new reviews.
-     *
-     * @return List of new Funpay events detected during this fetch operation
-     */
-    suspend fun fetchEvents(): List<FunpayEvent> {
-        val reviews = parseReviews()
-        val newEvents = mutableListOf<FunpayEvent>()
-
-        val latest = reviews.firstOrNull() ?: return emptyList()
+        val currentReviews = parseReviews()
 
         if (isFirst) {
-            lastReviewId = latest.id
+            lastReviews.clear()
+            lastReviews.addAll(currentReviews)
             isFirst = false
-            return emptyList()
+            return
         }
 
-        if (latest.id != lastReviewId) {
-            newEvents.add(NewReviewEvent(latest))
-            lastReviewId = latest.id
+        println(" Current reviews: $currentReviews")
+        val newReviews = currentReviews.filter { current ->
+            lastReviews.none { it.userId == current.userId && it.text == current.text && it.rating == current.rating }
+        }
+        println(" New reviews: $newReviews")
+
+        for (review in newReviews) {
+            eventBus.post(NewReviewEvent(review))
         }
 
-        return newEvents
+        lastReviews.clear()
+        lastReviews.addAll(currentReviews)
     }
+
 
     /**
      * Parses the user's Funpay profile page to extract reviews.
