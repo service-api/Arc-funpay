@@ -38,9 +38,9 @@ suspend fun main() {
     app.start()
 
     val api = app.koin.get<FunpayAPI>()
-//    val chatId = api.getChatNodeByUsername("JIeT") ?: "0"
-//    println("Chat ID: $chatId")
-//    api.sendMessage(chatId, "Hello from Arc!")
+    val chatId = api.getChatNodeByUsername("JIeT") ?: "0"
+
+    api.sendMessage(chatId, "Hello from Arc!")
     // Account info
 
     val accountInfo = api.getInfo()

@@ -25,7 +25,7 @@ This project provides an implementation of the **Funpay API** in Kotlin, enablin
    ```  
 2. Add the dependency:
    ```kotlin
-   implementation("arc:funpay:1.3.5")
+   implementation("arc:funpay:1.3.6")
    ```  
 
 
@@ -66,6 +66,13 @@ println(
 )
 ```
 
+### 🔹 Sending Chat messages and Getting user by name
+```kotlin
+val chatId = api.getChatNodeByUsername("JIeT") ?: "0"
+println("Chat ID: $chatId")
+api.sendMessage(chatId, "Hello from Arc!")
+```
+
 ### 🔹 Raising Lots on Funpay
 ```kotlin
 val lots = api.raiseLots("41", "504") // Example: Dota 2 - Other
@@ -95,20 +102,33 @@ app.addModule(LotsRaiseModule(listOf(
 This API supports an **event-driven system**, allowing you to listen to various Funpay actions.
 
 ```kotlin
-app.eventBus.on<PreLotsRaiseEvent> {
-    println("PreLotsRaiseEvent: ${it.category.name} -> ${it.category.nextCheck}")
+    app.eventBus.on<PreLotsRaiseEvent> {
+   println("PreLotsRaiseEvent: ${it.category.name} -> ${it.category.nextCheck}")
+   // it.isCancelled = true // Can be cancelled if event is Pre
 }
 
 app.eventBus.on<LotsRaiseEvent> {
-    println("LotsRaiseEvent: ${it.category.name} -> ${it.message}")
+   println("LotsRaiseEvent: ${it.category.name} -> ${it.message}")
 }
 
 app.eventBus.on<NewOrderEvent> {
-    println("NewOrderEvent: ${it.oldCount} -> ${it.newCount}")
+   println("NewOrderEvent: ${it.order}")
+}
+
+app.eventBus.on<OrderCloseEvent> {
+   println("OrderCloseEvent: ${it.order}")
 }
 
 app.eventBus.on<NewPurchaseEvent> {
-    println("NewPurchaseEvent: ${it.oldCount} -> ${it.newCount}")
+   println("NewPurchaseEvent: ${it.oldCount} -> ${it.newCount}")
+}
+
+app.eventBus.on<NewChatEvent> {
+   println("NewChatEvent: ${it.nodeId} -> ${it.userName}")
+}
+
+app.eventBus.on<NewMessageEvent> {
+   println("NewMessageEvent: ${it.userName} -> ${it.message}")
 }
 ```
 

@@ -47,7 +47,7 @@ class FunpayAPI(
         val userId = try {
             val jsonElement = Json.parseToJsonElement(rawJson)
             jsonElement.jsonObject["userId"]?.jsonPrimitive?.longOrNull ?: 0L
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             0L
         }
 
@@ -115,6 +115,15 @@ class FunpayAPI(
         )
     }
 
+    /**
+     * Retrieves the chat node ID by username.
+     *
+     * This function scrapes the chat page to find a contact with the given username
+     * and extracts the chat node ID from the contact's URL.
+     *
+     * @param username The username to search for.
+     * @return The chat node ID if found, otherwise null.
+     */
     suspend fun getChatNodeByUsername(username: String): String? {
         val html = client.get("/chat/", cookies = mapOf(
             "golden_key" to account.goldenKey,
@@ -179,6 +188,7 @@ class FunpayAPI(
      *
      * @param orderId The ID of the order to be refunded.
      */
+    @ExperimentalStdlibApi
     suspend fun refundOrder(orderId: String) {
         client.post(
             endpoint = "/orders/refund",
