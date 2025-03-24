@@ -1,5 +1,6 @@
 package arc.funpay.system
 
+import arc.funpay.GlobalSettings
 import arc.funpay.ext.extract
 import arc.funpay.ext.parse
 import arc.funpay.model.funpay.Account
@@ -66,6 +67,7 @@ class FunpayAPI(
         AccountInfo(userId, username, primaryBalance)
     }
 
+
     /**
      * Sends a message to a specific chat node.
      *
@@ -96,6 +98,7 @@ class FunpayAPI(
         }
 
 
+        GlobalSettings.isSendingMessage = true
         client.post(
             endpoint = "/runner/",
             headers = mapOf(
@@ -113,6 +116,7 @@ class FunpayAPI(
                 "csrf_token" to account.csrfToken,
             )
         )
+        GlobalSettings.isSendingMessage = false
     }
 
     /**

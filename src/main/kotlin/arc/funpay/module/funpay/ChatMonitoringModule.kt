@@ -1,5 +1,6 @@
 package arc.funpay.module.funpay
 
+import arc.funpay.GlobalSettings
 import arc.funpay.event.NewChatEvent
 import arc.funpay.event.NewMessageEvent
 import arc.funpay.ext.now
@@ -31,6 +32,8 @@ class ChatMonitoringModule : Module() {
      * It fetches the chat list from Funpay, parses it, and identifies new or updated chats.
      */
     override suspend fun onTick() {
+        if (GlobalSettings.isSendingMessage) return
+
         val html = client.get(
             "/chat/",
             cookies = mapOf(
