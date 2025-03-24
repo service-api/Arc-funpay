@@ -67,6 +67,62 @@ class FunpayAPI(
         AccountInfo(userId, username, primaryBalance)
     }
 
+    /**
+     * Sends a review or response to a review for a specific order.
+     *
+     * This function submits a review with text content and a rating for a given order ID.
+     * The rating must be between 1 and 5, with 5 being the default (highest rating).
+     *
+     * @param orderId The ID of the order to review.
+     * @param text The content of the review message.
+     * @param rating The rating to give, from 1 to 5 (default is 5).
+     * @return The content of the successful response from the server.
+     * @throws IllegalArgumentException If the rating is not between 1 and 5.
+     * @throws Exception If the request fails with HTTP 400 (with details from the response) or any other non-200 status.
+     */
+    suspend fun sendReview(orderId: String, text: String, rating: Int = 5): String {
+        require(rating in 1..5) { "Rating must be between 1 and 5." }
+
+        val headers = mapOf(
+            HttpHeaders.Accept to "*/*",
+            "X-Requested-With" to "XMLHttpRequest"
+        )
+
+        val body = mapOf(
+            "authorId" to account.userId.toString(),
+            "text" to text,
+            "rating" to rating.toString(),
+            "csrf_token" to account.csrfToken,
+            "orderId" to orderId
+        )
+
+        val response = client.post(
+            endpoint = "/orders/review",
+            headers = headers,
+            cookies = mapOf(
+                "golden_key" to account.goldenKey,
+                "PHPSESSID" to account.phpSessionId
+            ),
+            body = body
+        )
+
+        val status = response.status.value
+        val responseText = response.bodyAsText()
+
+        if (status == 400) {
+            val json = Json.parseToJsonElement(responseText).jsonObject
+            val msg = json["msg"]?.jsonPrimitive?.contentOrNull ?: "Unknown error"
+            throw Exception("FeedbackEditingError: $msg (orderId=$orderId)")
+        }
+
+        if (status != 200) {
+            throw Exception("RequestFailedError: HTTP $status")
+        }
+
+        val json = Json.parseToJsonElement(responseText).jsonObject
+        return json["content"]?.jsonPrimitive?.content ?: ""
+    }
+
 
     /**
      * Sends a message to a specific chat node.

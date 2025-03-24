@@ -46,6 +46,8 @@ suspend fun main() {
     api.sendMessage(chatId, "Hello from Arc!")
     // Account info
 
+    api.sendReview("DVQ2V7P4", "Спасибо за отзыв!")
+
     val accountInfo = api.getInfo()
 
     val account = app.koin.get<Account>()
@@ -122,7 +124,7 @@ suspend fun main() {
     }
 
     app.eventBus.on<NewReviewEvent> {
-        println("NewReviewEvent: ${it.userId} -> ${it.text}")
+        println("NewReviewEvent: ${it.review.userId} -> ${it.review.text}")
     }
 
 }
