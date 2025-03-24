@@ -114,4 +114,8 @@ suspend fun main() {
         println("NewChatEvent: ${it.nodeId} -> ${it.userName}")
     }
 
+    app.eventBus.on<NewMessageEvent> {
+        println("NewMessageEvent: ${it.userName} -> ${it.message}")
+    }
+
 }
