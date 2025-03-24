@@ -74,7 +74,7 @@ class ReviewEventModule : Module() {
         }
 
         if (latest.id != lastReviewId) {
-            newEvents.add(NewReviewEvent(latest.userId, latest.text, latest.orderLink))
+            newEvents.add(NewReviewEvent(latest))
             lastReviewId = latest.id
         }
 

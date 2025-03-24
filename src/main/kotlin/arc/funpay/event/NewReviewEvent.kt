@@ -1,9 +1,8 @@
 package arc.funpay.event
 
 import arc.funpay.event.api.FunpayEvent
+import arc.funpay.module.funpay.ReviewEventModule
 
 data class NewReviewEvent(
-    val userId: Int,
-    val text: String,
-    val orderLink: String
+    val review: ReviewEventModule.Review
 ) : FunpayEvent
