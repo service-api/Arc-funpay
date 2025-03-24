@@ -8,6 +8,7 @@ import arc.funpay.module.api.Module
 import arc.funpay.module.funpay.ChatMonitoringModule
 import arc.funpay.module.funpay.OrderEventModule
 import arc.funpay.module.funpay.OrderStatusModule
+import arc.funpay.module.funpay.ReviewEventModule
 import arc.funpay.system.FunpayAPI
 import arc.funpay.system.api.FunpayHttpClient
 import kotlinx.coroutines.*
@@ -40,6 +41,7 @@ class FunpayApplication(
         add(OrderEventModule())
         add(OrderStatusModule())
         add(ChatMonitoringModule())
+        add(ReviewEventModule())
     }
 
     val eventBus = EventBus()
