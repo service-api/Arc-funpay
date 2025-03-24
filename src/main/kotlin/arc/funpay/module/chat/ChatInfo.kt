@@ -12,5 +12,5 @@ data class ChatInfo(
     val nodeId: String,
     val userName: String,
     val lastMessage: String,
-    val lastMessageTime: String
+    val lastMessageTime: Long
 )
