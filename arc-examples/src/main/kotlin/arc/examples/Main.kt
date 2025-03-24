@@ -7,6 +7,7 @@ import arc.funpay.event.*
 import arc.funpay.event.pre.PreLotsRaiseEvent
 import arc.funpay.model.funpay.Account
 import arc.funpay.model.funpay.Category
+import arc.funpay.module.funpay.ReviewEventModule
 import arc.funpay.system.FunpayAPI
 import com.charleskorn.kaml.Yaml
 import kotlinx.serialization.decodeFromString
@@ -38,6 +39,8 @@ suspend fun main() {
     app.start()
 
     val api = app.koin.get<FunpayAPI>()
+    val reviewModule = app.koin.get<ReviewEventModule>()
+
     val chatId = api.getChatNodeByUsername("JIeT") ?: "0"
 
     api.sendMessage(chatId, "Hello from Arc!")
@@ -116,6 +119,10 @@ suspend fun main() {
 
     app.eventBus.on<NewMessageEvent> {
         println("NewMessageEvent: ${it.userName} -> ${it.message}")
+    }
+
+    app.eventBus.on<NewReviewEvent> {
+        println("NewReviewEvent: ${it.userId} -> ${it.text}")
     }
 
 }

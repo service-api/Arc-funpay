@@ -25,7 +25,7 @@ This project provides an implementation of the **Funpay API** in Kotlin, enablin
    ```  
 2. Add the dependency:
    ```kotlin
-   implementation("arc:funpay:1.3.9")
+   implementation("arc:funpay:1.4.0")
    ```  
 
 
@@ -129,6 +129,10 @@ app.eventBus.on<NewChatEvent> {
 
 app.eventBus.on<NewMessageEvent> {
    println("NewMessageEvent: ${it.userName} -> ${it.message}")
+}
+
+app.eventBus.on<NewReviewEvent> {
+   println("NewReviewEvent: ${it.userId} -> ${it.text}")
 }
 ```
 
