@@ -1,8 +1,10 @@
 package arc.funpay.module.funpay
 
 import arc.funpay.event.NewChatEvent
+import arc.funpay.event.NewMessageEvent
 import arc.funpay.model.funpay.Account
 import arc.funpay.module.api.Module
+import arc.funpay.module.chat.ChatInfo
 import arc.funpay.system.api.FunpayHttpClient
 import io.ktor.client.statement.*
 import org.jsoup.Jsoup
@@ -13,7 +15,7 @@ class ChatMonitoringModule : Module() {
     val client by inject<FunpayHttpClient>()
     val account by inject<Account>()
 
-    var currentChats: MutableMap<String, String> = mutableMapOf()
+    var currentChats: MutableMap<String, ChatInfo> = mutableMapOf()
 
     override suspend fun onTick() {
         val html = client.get(
@@ -27,12 +29,13 @@ class ChatMonitoringModule : Module() {
         val doc: Document = Jsoup.parse(html)
         val chatElements = doc.select("a.contact-item")
 
-        val newChats: MutableMap<String, String> = mutableMapOf()
+        val newChats: MutableMap<String, ChatInfo> = mutableMapOf()
         chatElements.forEach { element ->
             val nodeId = element.attr("data-id")
-            val userName = element.selectFirst(".media-user-name")?.text()?.trim()
-            if (nodeId.isNotEmpty() && !userName.isNullOrEmpty()) {
-                newChats[nodeId] = userName
+            val userName = element.selectFirst(".media-user-name")?.text()?.trim() ?: return@forEach
+            val lastMessage = element.selectFirst(".contact-item-message")?.text()?.trim() ?: ""
+            if (nodeId.isNotEmpty() && userName.isNotEmpty()) {
+                newChats[nodeId] = ChatInfo(nodeId, userName, lastMessage)
             }
         }
 
@@ -41,13 +44,18 @@ class ChatMonitoringModule : Module() {
             return
         }
 
-        val addedChats = newChats.filter { (nodeId, _) -> !currentChats.containsKey(nodeId) }
-
-        if (addedChats.isNotEmpty()) {
-            addedChats.forEach { (nodeId, userName) ->
-                eventBus.post(NewChatEvent(userName, nodeId))
-            }
-            currentChats = newChats.toMutableMap()
+        val addedChats = newChats.filterKeys { it !in currentChats }
+        addedChats.forEach { (nodeId, chatInfo) ->
+            eventBus.post(NewChatEvent(chatInfo.userName, nodeId))
         }
+
+        newChats.forEach { (nodeId, newChat) ->
+            val oldChat = currentChats[nodeId]
+            if (oldChat != null && oldChat.lastMessage != newChat.lastMessage) {
+                eventBus.post(NewMessageEvent(newChat.userName, nodeId, newChat.lastMessage))
+            }
+        }
+
+        currentChats = newChats.toMutableMap()
     }
 }
