@@ -25,7 +25,7 @@ This project provides an implementation of the **Funpay API** in Kotlin, enablin
    ```  
 2. Add the dependency:
    ```kotlin
-   implementation("arc:funpay:1.4.3")
+   implementation("arc:funpay:1.4.5")
    ```  
 
 

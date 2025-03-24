@@ -58,12 +58,9 @@ class ReviewEventModule : Module() {
             return
         }
 
-        println(" Current reviews: $currentReviews")
         val newReviews = currentReviews.filter { current ->
             lastReviews.none { it.userId == current.userId && it.text == current.text && it.rating == current.rating }
         }
-        println(" New reviews: $newReviews")
-
         for (review in newReviews) {
             eventBus.post(NewReviewEvent(review))
         }
@@ -101,7 +98,8 @@ class ReviewEventModule : Module() {
             val userLink = el.selectFirst(".review-item-user a")?.attr("href") ?: continue
             val userIdParsed = Regex("""/users/(\d+)/?""").find(userLink)?.groupValues?.get(1)?.toIntOrNull() ?: continue
 
-            val orderLink = el.selectFirst(".review-item-order a")?.attr("href") ?: ""
+            val orderHref = el.selectFirst(".review-item-order a")?.attr("href") ?: ""
+            val orderId = Regex("""/orders/([A-Z0-9]+)/?""").find(orderHref)?.groupValues?.get(1) ?: ""
 
             val text = el.selectFirst(".review-item-text")?.text()?.trim() ?: ""
 
@@ -111,7 +109,7 @@ class ReviewEventModule : Module() {
                 Review(
                     id = "review-$index",
                     userId = userIdParsed,
-                    orderLink = orderLink,
+                    orderId = orderId,
                     text = text,
                     rating = rating
                 )
@@ -130,8 +128,7 @@ class ReviewEventModule : Module() {
      * @param element The HTML element containing the review
      * @return The numeric rating (1-5) or 0 if not found
      */
-    private fun parseReviewRating(element: Element): Int {
-        // Ищем все div с классом ratingX внутри .rating
+    fun parseReviewRating(element: Element): Int {
         val ratingBlocks = element.select(".review-item-rating .rating > div")
         for (div in ratingBlocks) {
             val match = Regex("""rating(\d)""").find(div.className())
@@ -159,14 +156,14 @@ class ReviewEventModule : Module() {
      *
      * @property id Unique identifier for the review (format: "review-{index}")
      * @property userId The numeric ID of the user who left the review
-     * @property orderLink URL linking to the order associated with this review
+     * @property orderId The ID of the order associated with the review
      * @property text The text content of the review
      * @property rating Numeric rating given in the review (1-5)
      */
     data class Review(
         val id: String,
         val userId: Int,
-        val orderLink: String,
+        val orderId: String,
         val text: String,
         val rating: Int
     )
