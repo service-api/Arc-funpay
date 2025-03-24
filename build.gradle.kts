@@ -58,7 +58,7 @@ publishing {
         create<MavenPublication>("maven") {
             groupId = "arc"
             artifactId = "funpay"
-            version = "1.3.1"
+            version = "1.3.4"
             from(components["java"])
             artifact(sourcesJar.get())
             artifact(javadocJar.get())

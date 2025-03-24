@@ -3,10 +3,7 @@ package arc.examples
 import arc.examples.ArcPath.absolute
 import arc.examples.modules.LotsRaiseModule
 import arc.funpay.FunpayApplication
-import arc.funpay.event.LotsRaiseEvent
-import arc.funpay.event.NewOrderEvent
-import arc.funpay.event.NewPurchaseEvent
-import arc.funpay.event.OrderCloseEvent
+import arc.funpay.event.*
 import arc.funpay.event.pre.PreLotsRaiseEvent
 import arc.funpay.model.funpay.Account
 import arc.funpay.model.funpay.Category
@@ -111,6 +108,10 @@ suspend fun main() {
 
     app.eventBus.on<NewPurchaseEvent> {
         println("NewPurchaseEvent: ${it.oldCount} -> ${it.newCount}")
+    }
+
+    app.eventBus.on<NewChatEvent> {
+        println("NewChatEvent: ${it.nodeId} -> ${it.userName}")
     }
 
 }

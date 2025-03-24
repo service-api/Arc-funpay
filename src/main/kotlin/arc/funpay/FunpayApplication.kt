@@ -5,6 +5,7 @@ import arc.funpay.event.api.EventBus
 import arc.funpay.model.funpay.Account
 import arc.funpay.model.other.Proxy
 import arc.funpay.module.api.Module
+import arc.funpay.module.funpay.ChatMonitoringModule
 import arc.funpay.module.funpay.OrderEventModule
 import arc.funpay.module.funpay.OrderStatusModule
 import arc.funpay.system.FunpayAPI
@@ -14,6 +15,7 @@ import org.koin.core.context.startKoin
 import org.koin.dsl.bind
 import org.koin.dsl.module
 import org.slf4j.LoggerFactory
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 
 /**
@@ -34,10 +36,11 @@ class FunpayApplication(
         })
     }.koin
 
-    val modules = hashSetOf<Module>(
-        OrderEventModule(),
-        OrderStatusModule()
-    )
+    val modules = ConcurrentHashMap.newKeySet<Module>().apply {
+        add(OrderEventModule())
+        add(OrderStatusModule())
+        add(ChatMonitoringModule())
+    }
 
     val eventBus = EventBus()
 
@@ -84,7 +87,7 @@ class FunpayApplication(
 
         scope.launch {
             while (isRunnable) {
-                modules.forEach { it.onTick() }
+                modules.toList().forEach { it.onTick() }
                 delay(600L * 10)
             }
             scope.cancel()
