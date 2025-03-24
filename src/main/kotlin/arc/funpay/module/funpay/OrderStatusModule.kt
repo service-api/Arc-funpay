@@ -1,5 +1,7 @@
 package arc.funpay.module.funpay
 
+import arc.funpay.event.NewOrderEvent
+import arc.funpay.event.OrderCloseEvent
 import arc.funpay.model.funpay.Account
 import arc.funpay.model.funpay.Order
 import arc.funpay.model.funpay.OrderStatus
@@ -14,19 +16,51 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.*
 
+/**
+ * Module for managing and parsing order statuses from Funpay.
+ *
+ * This module is responsible for fetching order data, parsing it,
+ * and triggering events based on order status changes.
+ */
 class OrderStatusModule : Module() {
     val client by inject<FunpayHttpClient>()
     val account by inject<Account>()
 
-    val fullDateTimeFormatter = DateTimeFormatter.ofPattern("d MMMM yyyy", Locale("ru"))
-    var orders: List<Order> = emptyList()
+    private val fullDateTimeFormatter = DateTimeFormatter.ofPattern("d MMMM yyyy", Locale("ru"))
+    private var orders: List<Order> = emptyList()
 
+    /**
+     * Fetches order data from Funpay and processes it.
+     *
+     * This function retrieves the order list, parses it, and then checks for
+     * new orders or changes in order status, posting corresponding events.
+     */
     override suspend fun onTick() {
         val html = client.get("/orders/trade", cookies = mapOf("golden_key" to account.goldenKey)).bodyAsText()
         val doc = Jsoup.parse(html)
-        orders = parseOrders(doc)
+        val newOrders = parseOrders(doc)
+
+        newOrders.forEach { newOrder ->
+            val oldOrder = orders.find { it.orderId == newOrder.orderId }
+
+            if (oldOrder == null && newOrder.status == OrderStatus.OPEN) {
+                eventBus.post(NewOrderEvent(newOrder))
+            }
+
+            if (oldOrder != null && oldOrder.status != OrderStatus.CLOSED && newOrder.status == OrderStatus.CLOSED) {
+                eventBus.post(OrderCloseEvent(newOrder))
+            }
+        }
+
+        orders = newOrders
     }
 
+    /**
+     * Parses the HTML document to extract order information.
+     *
+     * @param doc The Jsoup Document object to parse.
+     * @return A list of [Order] objects extracted from the HTML.
+     */
     fun parseOrders(doc: Document): List<Order> {
         val now = LocalDate.now()
         return doc.select("a.tc-item").mapNotNull { el ->
@@ -49,7 +83,13 @@ class OrderStatusModule : Module() {
         }
     }
 
-
+    /**
+     * Parses a date string into a LocalDate object.
+     *
+     * @param text The date string to parse.
+     * @param now The current LocalDate, used as a reference for relative dates.
+     * @return The parsed LocalDate, or null if parsing fails.
+     */
     fun parseDate(text: String, now: LocalDate): LocalDate? {
         val lower = text.lowercase()
 
@@ -75,7 +115,7 @@ class OrderStatusModule : Module() {
                 val months = Regex("""(\d+) месяцев назад""").find(lower)?.groupValues?.get(1)?.toLongOrNull()
                 months?.let { now.minusMonths(it) }
             }
-            "месяц назад" in lower -> now.minusMonths(1)
+            "месяц наз��д" in lower -> now.minusMonths(1)
             else -> {
                 val datePart = text.substringBefore(",").trim()
                 val formatter = fullDateTimeFormatter
@@ -85,51 +125,116 @@ class OrderStatusModule : Module() {
         }
     }
 
+    /**
+     * Retrieves a list of currently open orders.
+     *
+     * @return A list of [Order] objects with status OPEN.
+     */
     fun getOpenedOrders(): List<Order> = orders.filter { it.status == OrderStatus.OPEN }
 
+    /**
+     * Retrieves all orders.
+     *
+     * @return A list of all [Order] objects.
+     */
     fun getAllOrders(): List<Order> = orders
 
+    /**
+     * Retrieves a list of refunded orders.
+     *
+     * @return A list of [Order] objects with status REFUND.
+     */
     fun getRefundOrders(): List<Order> = orders.filter { it.status == OrderStatus.REFUND }
 
+    /**
+     * Retrieves a list of orders placed today, excluding refunds.
+     *
+     * @return A list of [Order] objects placed today with status not REFUND.
+     */
     fun getOrdersToday(): List<Order> =
         orders.filter { it.date == LocalDate.now().minusDays(1) && it.status != OrderStatus.REFUND }
 
+    /**
+     * Retrieves a list of orders placed this week, excluding refunds.
+     *
+     * @return A list of [Order] objects placed this week with status not REFUND.
+     */
     fun getOrdersThisWeek(): List<Order> {
         val startOfWeek = LocalDate.now().with(DayOfWeek.MONDAY)
         return orders.filter { it.date >= startOfWeek && it.status != OrderStatus.REFUND }
     }
 
+    /**
+     * Retrieves a list of orders placed this month, excluding refunds.
+     *
+     * @return A list of [Order] objects placed this month with status not REFUND.
+     */
     fun getOrdersThisMonth(): List<Order> {
         val startOfMonth = LocalDate.now().withDayOfMonth(1)
         return orders.filter { it.date >= startOfMonth && it.status != OrderStatus.REFUND }
     }
 
+    /**
+     * Retrieves a list of orders placed this year, excluding refunds.
+     *
+     * @return A list of [Order] objects placed this year with status not REFUND.
+     */
     fun getOrdersThisYear(): List<Order> {
         val startOfYear = LocalDate.now().withDayOfYear(1)
         return orders.filter { it.date >= startOfYear && it.status != OrderStatus.REFUND }
     }
 
+    /**
+     * Retrieves all orders ever placed, excluding refunds.
+     *
+     * @return A list of all [Order] objects ever placed with status not REFUND.
+     */
     fun getAllOrdersEver(): List<Order> =
         orders.filter { it.status != OrderStatus.REFUND }
 
+    /**
+     * Retrieves a list of refunds processed today.
+     *
+     * @return A list of [Order] objects refunded today.
+     */
     fun getRefundsToday(): List<Order> =
         orders.filter { it.date == LocalDate.now().minusDays(1) && it.status == OrderStatus.REFUND }
 
+    /**
+     * Retrieves a list of refunds processed this week.
+     *
+     * @return A list of [Order] objects refunded this week.
+     */
     fun getRefundsThisWeek(): List<Order> {
         val startOfWeek = LocalDate.now().with(DayOfWeek.MONDAY)
         return orders.filter { it.date >= startOfWeek && it.status == OrderStatus.REFUND }
     }
 
+    /**
+     * Retrieves a list of refunds processed this month.
+     *
+     * @return A list of [Order] objects refunded this month.
+     */
     fun getRefundsThisMonth(): List<Order> {
         val startOfMonth = LocalDate.now().withDayOfMonth(1)
         return orders.filter { it.date >= startOfMonth && it.status == OrderStatus.REFUND }
     }
 
+    /**
+     * Retrieves a list of refunds processed this year.
+     *
+     * @return A list of [Order] objects refunded this year.
+     */
     fun getRefundsThisYear(): List<Order> {
         val startOfYear = LocalDate.now().withDayOfYear(1)
         return orders.filter { it.date >= startOfYear && it.status == OrderStatus.REFUND }
     }
 
+    /**
+     * Retrieves all refunds ever processed.
+     *
+     * @return A list of all [Order] objects ever refunded.
+     */
     fun getAllRefundsEver(): List<Order> =
         orders.filter { it.status == OrderStatus.REFUND }
 }

@@ -6,6 +6,7 @@ import arc.funpay.FunpayApplication
 import arc.funpay.event.LotsRaiseEvent
 import arc.funpay.event.NewOrderEvent
 import arc.funpay.event.NewPurchaseEvent
+import arc.funpay.event.OrderCloseEvent
 import arc.funpay.event.pre.PreLotsRaiseEvent
 import arc.funpay.model.funpay.Account
 import arc.funpay.model.funpay.Category
@@ -40,9 +41,9 @@ suspend fun main() {
     app.start()
 
     val api = app.koin.get<FunpayAPI>()
-    val chatId = api.getChatNodeByUsername("JIeT") ?: "0"
-    println("Chat ID: $chatId")
-    api.sendMessage(chatId, "Hello from Arc!")
+//    val chatId = api.getChatNodeByUsername("JIeT") ?: "0"
+//    println("Chat ID: $chatId")
+//    api.sendMessage(chatId, "Hello from Arc!")
     // Account info
 
     val accountInfo = api.getInfo()
@@ -101,7 +102,11 @@ suspend fun main() {
     }
 
     app.eventBus.on<NewOrderEvent> {
-        println("NewOrderEvent: ${it.oldCount} -> ${it.newCount}")
+        println("NewOrderEvent: ${it.order}")
+    }
+
+    app.eventBus.on<OrderCloseEvent> {
+        println("OrderCloseEvent: ${it.order}")
     }
 
     app.eventBus.on<NewPurchaseEvent> {

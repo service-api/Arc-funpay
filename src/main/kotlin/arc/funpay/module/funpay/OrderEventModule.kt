@@ -1,6 +1,5 @@
 package arc.funpay.module.funpay
 
-import arc.funpay.event.NewOrderEvent
 import arc.funpay.event.NewPurchaseEvent
 import arc.funpay.event.api.FunpayEvent
 import arc.funpay.model.other.Orders
@@ -44,10 +43,6 @@ class OrderEventModule : Module() {
             isFirst = true
             lastOrders = currentOrders
             return events
-        }
-        lastOrders?.seller?.let {
-            if (it < currentOrders.seller)
-                events.add(NewOrderEvent(lastOrders?.seller ?: 0, currentOrders.seller))
         }
         lastOrders?.buyer?.let {
             if (it < currentOrders.buyer)

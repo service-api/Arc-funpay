@@ -1,14 +1,13 @@
 package arc.funpay.event
 
 import arc.funpay.event.api.FunpayEvent
+import arc.funpay.model.funpay.Order
 
 /**
  * Event triggered when there is a change in the order count.
  *
- * @property oldCount The previous count of orders.
- * @property newCount The new count of orders.
+ * @property order The order that triggered the event.
  */
 data class NewOrderEvent(
-    val oldCount: Int,
-    val newCount: Int
+    val order: Order
 ) : FunpayEvent
