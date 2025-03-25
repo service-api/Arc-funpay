@@ -5,10 +5,8 @@ import arc.funpay.event.pre.PreLotsRaiseEvent
 import arc.funpay.ext.extractNumber
 import arc.funpay.ext.now
 import arc.funpay.ext.parseTiming
-import arc.funpay.model.funpay.Account
 import arc.funpay.model.funpay.Category
 import arc.funpay.module.api.Module
-import org.koin.core.component.inject
 
 /**
  * Module responsible for raising lots in automatically detected categories.
@@ -16,14 +14,10 @@ import org.koin.core.component.inject
  * @property api FunpayAPI instance used to fetch and raise lots.
  */
 class LotsRaiseModule : Module() {
-    val account by inject<Account>()
-
     val categories = mutableListOf<Category>()
 
     override suspend fun onStart() {
         categories.clear()
-        categories.addAll(api.getAvailableCategories(account.userId).map { Category(it.gameId, it.nodeId, it.name) })
-        println("[LotsRaiseModule] Loaded ${categories.size} categories.")
     }
 
     /**
