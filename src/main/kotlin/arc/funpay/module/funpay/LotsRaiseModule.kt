@@ -34,15 +34,19 @@ class LotsRaiseModule : Module() {
     /**
      * Manually adds a category to raise.
      */
-    fun addCategory(category: Category) {
+    fun addCategory(category: Category): Boolean {
+        if (categories.contains(category)) {
+            return false
+        }
         categories += category
+        return true
     }
 
     /**
      * Manually removes a category by nodeId.
      */
-    fun removeCategoryByNodeId(nodeId: String) {
-        categories.removeIf { it.nodeId == nodeId }
+    fun removeCategoryByNodeId(nodeId: String): Boolean {
+        return categories.removeIf { it.nodeId == nodeId }
     }
 
     /**
