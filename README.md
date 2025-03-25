@@ -25,7 +25,7 @@ This project provides an implementation of the **Funpay API** in Kotlin, enablin
    ```  
 2. Add the dependency:
    ```kotlin
-   implementation("arc:funpay:1.4.5")
+   implementation("arc:funpay:1.4.6")
    ```  
 
 
@@ -89,14 +89,12 @@ The project includes a separate `arc.examples` module, providing ready-to-use **
 This module automates the process of raising lots in specific categories.
 
 ```kotlin
-app.addModule(LotsRaiseModule(listOf(
-    Category(
-        gameId = "41", // Dota 2
-        nodeId = "504", // Other
-        name = "Dota 2 Other"
-    )
-)))
+app.addModule(LotsRaiseModule())
 ```
+
+Parse automatically the lots 
+Starting by default, this is just example
+
 
 ### 🔹 Handling Events
 This API supports an **event-driven system**, allowing you to listen to various Funpay actions.

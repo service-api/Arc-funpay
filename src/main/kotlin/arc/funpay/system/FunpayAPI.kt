@@ -5,6 +5,7 @@ import arc.funpay.ext.extract
 import arc.funpay.ext.parse
 import arc.funpay.model.funpay.Account
 import arc.funpay.model.funpay.AccountInfo
+import arc.funpay.model.funpay.CategoryInfo
 import arc.funpay.model.other.Balance
 import arc.funpay.model.other.Currency
 import arc.funpay.model.other.Orders
@@ -302,6 +303,50 @@ class FunpayAPI(
             RaiseResponse(true, json["msg"]?.jsonPrimitive?.content ?: "None")
         } else {
             RaiseResponse(false, "Ошибка получения ответа от сервера")
+        }
+    }
+
+    suspend fun loadGameNameToIdMap(): Map<String, String> {
+        val html = client.get("/").bodyAsText()
+        val document = Jsoup.parse(html)
+        val items = document.select(".promo-game-item .game-title")
+
+        return items.associate { element ->
+            val name = element.text().trim()
+            val gameId = element.attr("data-id")
+            name to gameId
+        }
+    }
+
+    /**
+     * Parses the user profile and extracts available categories with active lots.
+     *
+     * @param userId The ID of the user to fetch categories from.
+     * @return List of category pairs (name, nodeId) — gameId must be mapped manually.
+     */
+    suspend fun getAvailableCategories(userId: Long): List<CategoryInfo> {
+        val html = client.get("/users/$userId/", cookies = mapOf(
+            "golden_key" to account.goldenKey
+        )).bodyAsText()
+
+        val gameMap = loadGameNameToIdMap()
+
+        val document = Jsoup.parse(html)
+        val categoryElements = document.select(".offer-list-title h3 a")
+
+        return categoryElements.mapNotNull { element ->
+            val name = element.text().trim()
+            val href = element.attr("href")
+            val nodeId = Regex("/lots/(\\d+)").find(href)?.groupValues?.get(1)
+            val gameId = gameMap.entries.find { name.contains(it.key, ignoreCase = true) }?.value
+
+            if (gameId != null && nodeId != null) {
+                CategoryInfo(
+                    gameId = gameId,
+                    nodeId = nodeId,
+                    name = name
+                )
+            } else null
         }
     }
 }

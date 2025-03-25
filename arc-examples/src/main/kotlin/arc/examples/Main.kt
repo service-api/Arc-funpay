@@ -1,12 +1,10 @@
 package arc.examples
 
 import arc.examples.ArcPath.absolute
-import arc.examples.modules.LotsRaiseModule
 import arc.funpay.FunpayApplication
 import arc.funpay.event.*
 import arc.funpay.event.pre.PreLotsRaiseEvent
 import arc.funpay.model.funpay.Account
-import arc.funpay.model.funpay.Category
 import arc.funpay.module.funpay.ReviewEventModule
 import arc.funpay.system.FunpayAPI
 import com.charleskorn.kaml.Yaml
@@ -83,14 +81,6 @@ suspend fun main() {
         - Lots raise message: ${lots.msg}
     """.trimIndent())
 
-    // Module example
-    app.addModule(LotsRaiseModule(listOf(
-        Category(
-            gameId = "41", // Dota 2
-            nodeId = "504", // Прочее
-            name = "Dota 2 Other",
-        )
-    )))
 
 
     // Event example

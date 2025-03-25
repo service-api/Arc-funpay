@@ -6,7 +6,7 @@ import arc.funpay.event.NewMessageEvent
 import arc.funpay.ext.now
 import arc.funpay.model.funpay.Account
 import arc.funpay.module.api.Module
-import arc.funpay.module.chat.ChatInfo
+import arc.funpay.model.chat.ChatInfo
 import arc.funpay.system.api.FunpayHttpClient
 import io.ktor.client.statement.*
 import org.jsoup.Jsoup

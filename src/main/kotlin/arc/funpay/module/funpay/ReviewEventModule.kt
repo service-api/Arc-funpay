@@ -26,11 +26,6 @@ class ReviewEventModule : Module() {
     var isFirst = true
 
     /**
-     * Stores the ID of the most recent review to detect new reviews.
-     */
-    var lastReviewId: String? = null
-
-    /**
      * The Funpay account associated with this module.
      * Injected using Koin dependency injection.
      */

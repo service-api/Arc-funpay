@@ -1,4 +1,4 @@
-package arc.funpay.module.chat
+package arc.funpay.model.chat
 
 /**
  * Data class representing chat information.
