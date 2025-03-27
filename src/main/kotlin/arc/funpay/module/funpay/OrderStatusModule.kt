@@ -26,8 +26,9 @@ class OrderStatusModule : Module() {
     val client by inject<FunpayHttpClient>()
     val account by inject<Account>()
 
-    private val fullDateTimeFormatter = DateTimeFormatter.ofPattern("d MMMM yyyy", Locale("ru"))
-    private var orders: List<Order> = emptyList()
+    var firstRun = true
+    val fullDateTimeFormatter = DateTimeFormatter.ofPattern("d MMMM yyyy", Locale("ru"))
+    var orders: List<Order> = emptyList()
 
     /**
      * Fetches order data from Funpay and processes it.
@@ -40,16 +41,20 @@ class OrderStatusModule : Module() {
         val doc = Jsoup.parse(html)
         val newOrders = parseOrders(doc)
 
-        newOrders.forEach { newOrder ->
-            val oldOrder = orders.find { it.orderId == newOrder.orderId }
+        if (!firstRun) {
+            newOrders.forEach { newOrder ->
+                val oldOrder = orders.find { it.orderId == newOrder.orderId }
 
-            if (oldOrder == null && newOrder.status == OrderStatus.OPEN) {
-                eventBus.post(NewOrderEvent(newOrder))
-            }
+                if (oldOrder == null && newOrder.status == OrderStatus.OPEN) {
+                    eventBus.post(NewOrderEvent(newOrder))
+                }
 
-            if (oldOrder != null && oldOrder.status != OrderStatus.CLOSED && newOrder.status == OrderStatus.CLOSED) {
-                eventBus.post(OrderCloseEvent(newOrder))
+                if (oldOrder != null && oldOrder.status != OrderStatus.CLOSED && newOrder.status == OrderStatus.CLOSED) {
+                    eventBus.post(OrderCloseEvent(newOrder))
+                }
             }
+        } else {
+            firstRun = false
         }
 
         orders = newOrders

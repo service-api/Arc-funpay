@@ -4,9 +4,10 @@ import arc.funpay.GlobalSettings
 import arc.funpay.event.NewChatEvent
 import arc.funpay.event.NewMessageEvent
 import arc.funpay.ext.now
+import arc.funpay.model.chat.ChatInfo
 import arc.funpay.model.funpay.Account
 import arc.funpay.module.api.Module
-import arc.funpay.model.chat.ChatInfo
+import arc.funpay.patern.ChatPattern
 import arc.funpay.system.api.FunpayHttpClient
 import io.ktor.client.statement.*
 import org.jsoup.Jsoup
@@ -59,12 +60,15 @@ class ChatMonitoringModule : Module() {
             currentChats.putAll(newChats)
             newChats.forEach { (nodeId, chatInfo) ->
                 if (chatInfo.lastMessage.isNotEmpty()) {
-                    eventBus.post(NewMessageEvent(chatInfo.userName, nodeId, chatInfo.lastMessage))
+                    val isNotSystemMessage = !ChatPattern.ORDER_OPENED.matches(chatInfo.lastMessage)
+
+                    if (isNotSystemMessage) {
+                        eventBus.post(NewMessageEvent(chatInfo.userName, nodeId, chatInfo.lastMessage))
+                    }
                 }
             }
             return
         }
-
         newChats.forEach { (nodeId, newChat) ->
             val oldChat = currentChats[nodeId]
 
