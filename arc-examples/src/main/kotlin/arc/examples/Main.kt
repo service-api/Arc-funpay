@@ -97,7 +97,7 @@ suspend fun main() {
         println("NewOrderEvent: ${it.order}")
     }
 
-    app.eventBus.on<OrderCloseEvent> {
+    app.eventBus.on<NewOrderCloseEvent> {
         println("OrderCloseEvent: ${it.order}")
     }
 

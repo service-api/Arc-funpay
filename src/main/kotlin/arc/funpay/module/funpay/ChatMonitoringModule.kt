@@ -60,11 +60,7 @@ class ChatMonitoringModule : Module() {
             currentChats.putAll(newChats)
             newChats.forEach { (nodeId, chatInfo) ->
                 if (chatInfo.lastMessage.isNotEmpty()) {
-                    val isNotSystemMessage = !ChatPattern.ORDER_OPENED.matches(chatInfo.lastMessage)
-
-                    if (isNotSystemMessage) {
-                        eventBus.post(NewMessageEvent(chatInfo.userName, nodeId, chatInfo.lastMessage))
-                    }
+                    eventBus.post(NewMessageEvent(chatInfo.userName, nodeId, chatInfo.lastMessage))
                 }
             }
             return
@@ -73,7 +69,11 @@ class ChatMonitoringModule : Module() {
             val oldChat = currentChats[nodeId]
 
             if (oldChat == null) {
-                eventBus.post(NewChatEvent(newChat.userName, nodeId))
+                val isNotSystemMessage = !ChatPattern.ORDER_OPENED.matches(newChat.lastMessage)
+
+                if (isNotSystemMessage) {
+                    eventBus.post(NewChatEvent(newChat.userName, nodeId))
+                }
                 if (newChat.lastMessage.isNotEmpty()) {
                     eventBus.post(NewMessageEvent(newChat.userName, nodeId, newChat.lastMessage))
                 }

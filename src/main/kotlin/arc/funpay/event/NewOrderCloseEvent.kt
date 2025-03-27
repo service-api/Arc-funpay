@@ -10,6 +10,6 @@ import arc.funpay.model.funpay.Order
  *
  * @property order The order that was closed.
  */
-data class OrderCloseEvent(
+data class NewOrderCloseEvent(
     val order: Order
 ) : FunpayEvent
