@@ -10,13 +10,6 @@ import kotlinx.serialization.json.longOrNull
 import org.jsoup.Jsoup
 import org.jsoup.parser.Parser
 
-/**
- * Data class, содержащий информацию об аккаунте, включая userId, goldenKey и PHPSESSID.
- *
- * @property userId Идентификатор пользователя.
- * @property goldenKey Золотой ключ аккаунта.
- * @property phpSessionId Значение куки PHPSESSID (может быть null, если не найден).
- */
 @Serializable
 data class Account(
     val userId: Long,
