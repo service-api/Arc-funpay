@@ -1,54 +1,37 @@
 package arc.funpay
 
-import arc.funpay.event.ReadyEvent
+import arc.funpay.di.api.AbstractModule
+import arc.funpay.di.api.DependencyContainer
+import arc.funpay.di.api.get
+import arc.funpay.di.impl.KoinContainer
+import arc.funpay.di.module.CoreServicesModule
+import arc.funpay.di.module.EventModule
+import arc.funpay.di.module.HttpModule
+import arc.funpay.domain.account.Account
 import arc.funpay.event.api.EventBus
-import arc.funpay.model.funpay.Account
-import arc.funpay.model.other.Proxy
-import arc.funpay.module.api.Module
-import arc.funpay.module.funpay.*
+import arc.funpay.event.impl.system.SystemEvent
 import arc.funpay.system.FunpayAPI
-import arc.funpay.system.api.FunpayHttpClient
-import kotlinx.coroutines.*
-import org.koin.core.context.startKoin
-import org.koin.dsl.bind
-import org.koin.dsl.module
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.util.concurrent.ConcurrentHashMap
-import kotlin.reflect.KClass
 
-/**
- * Main application class for Funpay.
- *
- * @property goldToken The token used for authentication.
- */
 class FunpayApplication(
-    val goldToken: String,
-    val proxy: Proxy? = null
+    val goldKey: String,
+    val container: DependencyContainer = KoinContainer()
 ) {
-    var isRunnable = false
-        private set
-    val logger = LoggerFactory.getLogger(this::class.qualifiedName)
-    val koin = startKoin {
-        modules(module {
-            single { FunpayHttpClient(proxy) }
-        })
-    }.koin
-
-    val modules = ConcurrentHashMap.newKeySet<Module>().apply {
-        add(OrderEventModule())
-        add(OrderStatusModule())
-        add(ChatMonitoringModule())
-        add(ReviewEventModule())
-        add(LotsRaiseModule())
+    init{
+        container.loadModules(
+            CoreServicesModule(),
+            EventModule(),
+            HttpModule()
+        )
     }
 
-    val eventBus = EventBus()
+    val logger: Logger = LoggerFactory.getLogger(this::class.qualifiedName)
 
-    /**
-     * Starts the application.
-     */
+    val eventBus by lazy { container.get<EventBus>() }
+
     suspend fun start() {
-        val account = Account.fromToken(goldToken, koin.get())
+        val account = Account.fromToken(goldKey, container.get())
         if (account == null || !account.isValid()) {
             logger.error("Invalid token")
             stop()
@@ -66,91 +49,19 @@ class FunpayApplication(
 
            Funpay API started on account with id: ${account.userId}
         """.trimIndent())
+        container.loadModules(object : AbstractModule() {
+            override fun bindings() = listOf(
+                singleton<Account> { account },
+                singleton<FunpayAPI> { c -> FunpayAPI(c.get(), c.get(), c.get()) }
+            )
+        })
 
-        koin.loadModules(listOf(module {
-            single { account }
-            single { FunpayAPI(get(), get()) }
-            single { eventBus }
-            modules.forEach { module -> single { module } bind module.bind as KClass<Module> }
-        }))
-
-        modules.forEach {
-            it.isRunning = true
-            it.onStart()
-            logger.info("${it.javaClass.simpleName} started")
-        }
-
-        isRunnable = true
-        eventBus.post(ReadyEvent())
-
-        val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
-
-        scope.launch {
-            while (isRunnable) {
-                modules.toList().forEach { it.onTick() }
-                delay( // 5 seconds
-                    5000L
-                )
-            }
-            scope.cancel()
-        }
+        eventBus.publish(SystemEvent.ApplicationReady(account.userId))
     }
 
-    /**
-     * Stops the application.
-     */
     suspend fun stop() {
-        isRunnable = false
-        runBlocking {
-            koin.close()
-        }
-
-        modules.forEach {
-            if (!it.isRunning) return@forEach
-            it.onStop()
-            logger.info("${it.javaClass.simpleName} stopped")
-        }
-    }
-
-    /**
-     * Adds a module to the application.
-     * Use on startup.
-     *
-     * @param module The module to add.
-     */
-    fun addModule(module: Module) {
-        modules.add(module)
-    }
-
-    /**
-     * Removes a module from the application.
-     * Use on startup.
-     *
-     * @param module The module to remove.
-     */
-    fun removeModule(module: Module) {
-        modules.remove(module)
-    }
-
-    /**
-     * Starts a specific module.
-     * Use in runtime.
-     *
-     * @param module The module to start.
-     */
-    suspend fun startModule(module: Module) {
-        module.onStart()
-        modules.add(module)
-    }
-
-    /**
-     * Stops a specific module.
-     * Use in runtime.
-     *
-     * @param module The module to stop.
-     */
-    suspend fun stopModule(module: Module) {
-        module.onStop()
-        modules.remove(module)
+        eventBus.publish(SystemEvent.ApplicationStopping("User requested to stop"))
+        container.close()
+        eventBus.shutdown()
     }
 }

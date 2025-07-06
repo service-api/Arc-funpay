@@ -1,11 +1,9 @@
 [versions]
-ktor = "3.1.1"
-kotlinx-serialization = "1.8.0"
-jsoup = "1.19.1"
-koin = "4.1.0-Beta5"
-mockito = "5.16.0"
+ktor = "3.2.1"
+kotlinx-serialization = "1.9.0"
+jsoup = "1.21.1"
+koin = "4.1.0"
 slf4j = "2.0.17"
-mockito-kotlin = "5.4.0"
 
 [libraries]
 ktor-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
@@ -16,5 +14,3 @@ kotlinx-serialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-
 jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
 koin = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 slf4j = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
-mockito = { module = "org.mockito:mockito-core", version.ref = "mockito" }
-mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockito-kotlin" }

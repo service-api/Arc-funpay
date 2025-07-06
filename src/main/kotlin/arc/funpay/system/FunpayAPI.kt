@@ -1,16 +1,12 @@
 package arc.funpay.system
 
-import arc.funpay.GlobalSettings
-import arc.funpay.ext.extract
-import arc.funpay.ext.parse
-import arc.funpay.model.funpay.Account
-import arc.funpay.model.funpay.AccountInfo
-import arc.funpay.model.funpay.CategoryInfo
-import arc.funpay.model.other.Balance
-import arc.funpay.model.other.Currency
-import arc.funpay.model.other.Orders
-import arc.funpay.model.response.RaiseResponse
-import arc.funpay.system.api.FunpayHttpClient
+import arc.funpay.domain.account.Account
+import arc.funpay.domain.account.AccountInfo
+import arc.funpay.domain.common.Balance
+import arc.funpay.domain.common.Currency
+import arc.funpay.domain.common.RaiseResponse
+import arc.funpay.ext.StringExtensions
+import arc.funpay.http.api.HttpClient
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.coroutines.runBlocking
@@ -18,28 +14,11 @@ import kotlinx.serialization.json.*
 import org.jsoup.Jsoup
 import org.jsoup.parser.Parser
 
-/**
- * Class representing the Funpay API.
- *
- * This class provides methods to interact with the Funpay API,
- * such as retrieving account information, sending messages,
- * getting order details, refunding orders, and raising lots.
- *
- * @property client The HTTP client used for making requests.
- * @property account The account associated with the API.
- */
 class FunpayAPI(
-    val client: FunpayHttpClient,
-    val account: Account
+    val client: HttpClient,
+    val account: Account,
+    val string: StringExtensions
 ) {
-    /**
-     * Retrieves account information.
-     *
-     * This function fetches account details such as user ID, username, and balance
-     * from the Funpay API.
-     *
-     * @return An AccountInfo object containing user ID, username, and balance.
-     */
     fun getInfo(): AccountInfo = runBlocking {
         val html = client.get("/", cookies = mapOf("golden_key" to account.goldenKey)).bodyAsText()
 
@@ -53,7 +32,11 @@ class FunpayAPI(
             0L
         }
 
-        val username = html.extract("""<div class=\"user-link-name\">(.*?)<\/div>""")
+
+        val username = with(string) {
+            html.extract("""<div class=\"user-link-name\">(.*?)<\/div>""")
+        }
+
 
         val balances = Regex("""<span class="badge badge-balance">([\d.,]+)\s*([^\d\s<]+)</span>""")
             .findAll(html)
@@ -67,70 +50,6 @@ class FunpayAPI(
 
         AccountInfo(userId, username, primaryBalance)
     }
-
-    /**
-     * Sends a review or response to a review for a specific order.
-     *
-     * This function submits a review with text content and a rating for a given order ID.
-     * The rating must be between 1 and 5, with 5 being the default (highest rating).
-     *
-     * @param orderId The ID of the order to review.
-     * @param text The content of the review message.
-     * @param rating The rating to give, from 1 to 5 (default is 5).
-     * @return The content of the successful response from the server.
-     * @throws IllegalArgumentException If the rating is not between 1 and 5.
-     * @throws Exception If the request fails with HTTP 400 (with details from the response) or any other non-200 status.
-     */
-    suspend fun sendReview(orderId: String, text: String, rating: Int = 5): String {
-        require(rating in 1..5) { "Rating must be between 1 and 5." }
-
-        val headers = mapOf(
-            HttpHeaders.Accept to "*/*",
-            "X-Requested-With" to "XMLHttpRequest"
-        )
-
-        val body = mapOf(
-            "authorId" to account.userId.toString(),
-            "text" to text,
-            "rating" to rating.toString(),
-            "csrf_token" to account.csrfToken,
-            "orderId" to orderId
-        )
-
-        val response = client.post(
-            endpoint = "/orders/review",
-            headers = headers,
-            cookies = mapOf(
-                "golden_key" to account.goldenKey,
-                "PHPSESSID" to account.phpSessionId
-            ),
-            body = body
-        )
-
-        val status = response.status.value
-        val responseText = response.bodyAsText()
-
-        if (status == 400) {
-            val json = Json.parseToJsonElement(responseText).jsonObject
-            val msg = json["msg"]?.jsonPrimitive?.contentOrNull ?: "Unknown error"
-            throw Exception("FeedbackEditingError: $msg (orderId=$orderId)")
-        }
-
-        if (status != 200) {
-            throw Exception("RequestFailedError: HTTP $status")
-        }
-
-        val json = Json.parseToJsonElement(responseText).jsonObject
-        return json["content"]?.jsonPrimitive?.content ?: ""
-    }
-
-
-    /**
-     * Sends a message to a specific chat node.
-     *
-     * @param chatNode The identifier of the chat node.
-     * @param content The content of the message to be sent.
-     */
     suspend fun sendMessage(chatNode: String, content: String) {
         val requestJson = buildJsonObject {
             put("action", "chat_message")
@@ -155,7 +74,6 @@ class FunpayAPI(
         }
 
 
-        GlobalSettings.isSendingMessage = true
         client.post(
             endpoint = "/runner/",
             headers = mapOf(
@@ -173,18 +91,7 @@ class FunpayAPI(
                 "csrf_token" to account.csrfToken,
             )
         )
-        GlobalSettings.isSendingMessage = false
     }
-
-    /**
-     * Retrieves the chat node ID by username.
-     *
-     * This function scrapes the chat page to find a contact with the given username
-     * and extracts the chat node ID from the contact's URL.
-     *
-     * @param username The username to search for.
-     * @return The chat node ID if found, otherwise null.
-     */
     suspend fun getChatNodeByUsername(username: String): String? {
         val html = client.get("/chat/", cookies = mapOf(
             "golden_key" to account.goldenKey,
@@ -205,15 +112,7 @@ class FunpayAPI(
         return null
     }
 
-    /**
-     * Retrieves the orders for the account.
-     *
-     * This function fetches the buyer and seller order counts from the Funpay API.
-     *
-     * @return An Orders object containing the buyer and seller counts.
-     * @throws Exception if the request fails or the response is invalid.
-     */
-    suspend fun getOrders(): Orders {
+    suspend fun getOrdersCount(): Pair<Int, Int> {
         val cookies = mapOf("golden_key" to account.goldenKey)
         val jsonRequest = buildJsonArray {
             addJsonObject {
@@ -236,19 +135,18 @@ class FunpayAPI(
                 "request" to "false"
             )
         )
-        val result = response.bodyAsText().parse()
-        val data = Json.parseToJsonElement(result).jsonObject["objects"]
-            ?.jsonArray?.get(0)?.jsonObject?.get("data")?.jsonObject ?: return Orders(0, 0)
-        val buyer = data["buyer"]?.jsonPrimitive?.int ?: 0
-        val seller = data["seller"]?.jsonPrimitive?.int ?: 0
-        return Orders(buyer, seller)
+        val jsonData = with(string) {
+            val result = response.bodyAsText().parse()
+            Json.parseToJsonElement(result).jsonObject["objects"]
+                ?.jsonArray?.get(0)?.jsonObject?.get("data")?.jsonObject
+        } ?: return Pair(0, 0)
+
+        val buyer = jsonData["buyer"]?.jsonPrimitive?.int ?: 0
+        val seller = jsonData["seller"]?.jsonPrimitive?.int ?: 0
+        return Pair(buyer, seller)
+
     }
 
-    /**
-     * Refunds a specific order.
-     *
-     * @param orderId The ID of the order to be refunded.
-     */
     @ExperimentalStdlibApi
     suspend fun refundOrder(orderId: String) {
         client.post(
@@ -269,18 +167,6 @@ class FunpayAPI(
         )
     }
 
-    /**
-     * Raises lots for a specific game and node.
-     *
-     * This function sends a request to raise the lots for a given game and node.
-     *
-     * @param gameId The ID of the game.
-     * @param nodeId The ID of the node.
-     * @return A RaiseResponse object indicating the success or failure of the operation.
-     *         If successful, the message from the response is included.
-     *         If unsuccessful, a default error message is provided.
-     * @throws Exception if the request fails or the response is invalid.
-     */
     suspend fun raiseLots(gameId: String, nodeId: String): RaiseResponse {
         val response = client.post(
             endpoint = "/lots/raise",
@@ -303,50 +189,6 @@ class FunpayAPI(
             RaiseResponse(true, json["msg"]?.jsonPrimitive?.content ?: "None")
         } else {
             RaiseResponse(false, "Ошибка получения ответа от сервера")
-        }
-    }
-
-    suspend fun loadGameNameToIdMap(): Map<String, String> {
-        val html = client.get("/").bodyAsText()
-        val document = Jsoup.parse(html)
-        val items = document.select(".promo-game-item .game-title")
-
-        return items.associate { element ->
-            val name = element.text().trim()
-            val gameId = element.attr("data-id")
-            name to gameId
-        }
-    }
-
-    /**
-     * Parses the user profile and extracts available categories with active lots.
-     *
-     * @param userId The ID of the user to fetch categories from.
-     * @return List of category pairs (name, nodeId) — gameId must be mapped manually.
-     */
-    suspend fun getAvailableCategories(userId: Long): List<CategoryInfo> {
-        val html = client.get("/users/$userId/", cookies = mapOf(
-            "golden_key" to account.goldenKey
-        )).bodyAsText()
-
-        val gameMap = loadGameNameToIdMap()
-
-        val document = Jsoup.parse(html)
-        val categoryElements = document.select(".offer-list-title h3 a")
-
-        return categoryElements.mapNotNull { element ->
-            val name = element.text().trim()
-            val href = element.attr("href")
-            val nodeId = Regex("/lots/(\\d+)").find(href)?.groupValues?.get(1)
-            val gameId = gameMap.entries.find { name.contains(it.key, ignoreCase = true) }?.value
-
-            if (gameId != null && nodeId != null) {
-                CategoryInfo(
-                    gameId = gameId,
-                    nodeId = nodeId,
-                    name = name
-                )
-            } else null
         }
     }
 }
