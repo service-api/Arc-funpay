@@ -1,7 +1,11 @@
+
 plugins {
     kotlin("jvm") version "2.2.0"
     kotlin("plugin.serialization") version "2.2.0"
     id("maven-publish")
+}
+base {
+    archivesName.set("funpay")
 }
 
 group = "arc.funpay"
@@ -12,7 +16,6 @@ repositories {
 }
 
 dependencies {
-    // Production
     implementation(rootProject.libs.ktor.core)
     implementation(rootProject.libs.ktor.okhttp)
     implementation(rootProject.libs.ktor.content)
@@ -23,10 +26,34 @@ dependencies {
     implementation(rootProject.libs.koin)
 }
 
-tasks.test {
-    useJUnitPlatform()
-}
-
 kotlin {
     jvmToolchain(21)
+}
+
+val sourcesJar by tasks.registering(Jar::class) {
+    archiveClassifier.set("sources")
+    from(sourceSets.main.get().allSource)
+}
+
+val javadocJar by tasks.registering(Jar::class) {
+    archiveClassifier.set("javadoc")
+    from(tasks.javadoc)
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            from(components["java"])
+            groupId = "arc"
+            artifactId = project.base.archivesName.get()
+            version = project.version.toString()
+
+            artifact(sourcesJar)
+            artifact(javadocJar)
+        }
+    }
+
+    repositories {
+        mavenLocal()
+    }
 }
