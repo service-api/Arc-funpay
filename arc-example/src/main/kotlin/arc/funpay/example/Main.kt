@@ -4,15 +4,14 @@ import arc.funpay.FunpayApplication
 import arc.funpay.di.api.get
 import arc.funpay.event.dsl.on
 import arc.funpay.event.impl.system.SystemEvent
-import arc.funpay.system.FunpayAPI
+import arc.funpay.system.FunPayAPI
 
 suspend fun main() {
-    val app = FunpayApplication("da8vmrujr7p4kmuc4w782l5ndr6nbpfs")
-
+    val app = FunpayApplication("")
     app.eventBus.on<SystemEvent.ApplicationReady> {
         println("Application ready: ${it.accountId} (${it.timestamp})")
 
-        val api = app.container.get<FunpayAPI>()
+        val api = app.container.get<FunPayAPI>()
         val accountInfo = api.getInfo()
 
         println("""

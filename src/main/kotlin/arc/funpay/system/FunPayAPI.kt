@@ -14,7 +14,7 @@ import kotlinx.serialization.json.*
 import org.jsoup.Jsoup
 import org.jsoup.parser.Parser
 
-class FunpayAPI(
+class FunPayAPI(
     val client: HttpClient,
     val account: Account,
     val string: StringExtensions

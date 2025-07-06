@@ -6,11 +6,12 @@ import arc.funpay.di.api.get
 import arc.funpay.di.impl.KoinContainer
 import arc.funpay.di.module.CoreServicesModule
 import arc.funpay.di.module.EventModule
+import arc.funpay.di.module.FunPayModule
 import arc.funpay.di.module.HttpModule
 import arc.funpay.domain.account.Account
 import arc.funpay.event.api.EventBus
 import arc.funpay.event.impl.system.SystemEvent
-import arc.funpay.system.FunpayAPI
+import arc.funpay.system.FunPayAPI
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -22,7 +23,8 @@ class FunpayApplication(
         container.loadModules(
             CoreServicesModule(),
             EventModule(),
-            HttpModule()
+            HttpModule(),
+            FunPayModule()
         )
     }
 
@@ -52,7 +54,7 @@ class FunpayApplication(
         container.loadModules(object : AbstractModule() {
             override fun bindings() = listOf(
                 singleton<Account> { account },
-                singleton<FunpayAPI> { c -> FunpayAPI(c.get(), c.get(), c.get()) }
+                singleton<FunPayAPI> { c -> FunPayAPI(c.get(), c.get(), c.get()) }
             )
         })
 
