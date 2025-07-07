@@ -1,13 +1,18 @@
 package arc.funpay.core
 
 import arc.funpay.core.api.Module
-import arc.funpay.domain.category.Category
 import arc.funpay.event.impl.LotEvent
 import arc.funpay.ext.extractNumber
 import java.time.Instant
 
 class LotsRaiseModule: Module() {
-    private val categories = mutableListOf<Category>()
+    private val categories = mutableListOf<CategoryRaiseInfo>()
+
+    data class CategoryRaiseInfo(
+        val gameId: String,
+        val nodeId: String,
+        var nextCheck: Long = 0L
+    )
 
     override suspend fun onStart() {
         super.onStart()
@@ -24,7 +29,7 @@ class LotsRaiseModule: Module() {
             .forEach { handleRaise(it) }
     }
 
-    fun addCategory(category: Category): Boolean {
+    fun addCategory(category: CategoryRaiseInfo): Boolean {
         return if (categories.none { it.nodeId == category.nodeId }) {
             categories.add(category)
             true
@@ -35,7 +40,7 @@ class LotsRaiseModule: Module() {
         return categories.removeIf { it.nodeId == nodeId }
     }
 
-    suspend fun handleRaise(category: Category) {
+    suspend fun handleRaise(category: CategoryRaiseInfo) {
         try {
             val response = api.raiseLots(category.gameId, category.nodeId)
 

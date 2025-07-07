@@ -8,7 +8,7 @@ import arc.funpay.system.FunPayAPI
 
 @OptIn(ExperimentalStdlibApi::class)
 suspend fun main() {
-    val app = FunpayApplication("")
+    val app = FunpayApplication("da8vmrujr7p4kmuc4w782l5ndr6nbpfs")
 
     app.eventBus.on<SystemEvent.ApplicationReady> {
         println("Application ready: ${it.account} (${it.timestamp})")
@@ -22,6 +22,7 @@ suspend fun main() {
             - Currency: ${accountInfo.balance.currency}
         """.trimIndent())
 
+        println(api.getAvailableCategories(accountInfo.userId))
     }
     app.eventBus.on<MessageEvent.NewMessage> {
         println("New message: ${it.message}")

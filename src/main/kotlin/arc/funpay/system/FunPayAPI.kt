@@ -2,6 +2,7 @@ package arc.funpay.system
 
 import arc.funpay.domain.account.Account
 import arc.funpay.domain.account.AccountInfo
+import arc.funpay.domain.category.Category
 import arc.funpay.domain.chat.ChatMessage
 import arc.funpay.domain.common.Balance
 import arc.funpay.domain.common.Currency
@@ -173,6 +174,44 @@ class FunPayAPI(
             RaiseResponse(true, json["msg"]?.jsonPrimitive?.content ?: "None")
         } else {
             RaiseResponse(false, "Ошибка получения ответа от сервера")
+        }
+    }
+
+    suspend fun loadGameNameToIdMap(): Map<String, String> {
+        val html = client.get("/").bodyAsText()
+        val document = Jsoup.parse(html)
+        val items = document.select(".promo-game-item .game-title")
+
+        return items.associate { element ->
+            val name = element.text().trim()
+            val gameId = element.attr("data-id")
+            name to gameId
+        }
+    }
+
+    suspend fun getAvailableCategories(userId: Long): List<Category> {
+        val html = client.get("/users/$userId/", cookies = mapOf(
+            "golden_key" to account.goldenKey
+        )).bodyAsText()
+
+        val gameMap = loadGameNameToIdMap()
+
+        val document = Jsoup.parse(html)
+        val categoryElements = document.select(".offer-list-title h3 a")
+
+        return categoryElements.mapNotNull { element ->
+            val name = element.text().trim()
+            val href = element.attr("href")
+            val nodeId = Regex("/lots/(\\d+)").find(href)?.groupValues?.get(1)
+            val gameId = gameMap.entries.find { name.contains(it.key, ignoreCase = true) }?.value
+
+            if (gameId != null && nodeId != null) {
+                Category(
+                    gameId = gameId,
+                    nodeId = nodeId,
+                    name = name
+                )
+            } else null
         }
     }
 }
