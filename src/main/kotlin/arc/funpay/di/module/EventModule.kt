@@ -1,8 +1,6 @@
 package arc.funpay.di.module
 
-import arc.funpay.di.api.AbstractModule
-import arc.funpay.di.api.Binding
-import arc.funpay.di.api.get
+import arc.funpay.di.api.ServiceModule
 import arc.funpay.event.api.EventBus
 import arc.funpay.event.api.EventDispatcher
 import arc.funpay.event.core.DefaultEventBus
@@ -11,19 +9,12 @@ import arc.funpay.event.core.LoggingEventErrorHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import org.koin.dsl.module
 
-class EventModule : AbstractModule() {
-    override fun bindings(): List<Binding<*>> = listOf(
-        singleton<CoroutineScope> {
-            CoroutineScope(SupervisorJob() + Dispatchers.Default)
-        },
-
-        singleton<EventDispatcher> {
-            DefaultEventDispatcher(LoggingEventErrorHandler())
-        },
-
-        singleton<EventBus> { container ->
-            DefaultEventBus(container.get(), container.get())
-        }
-    )
+class EventModule : ServiceModule {
+    override fun createModule() = module {
+        single { CoroutineScope(SupervisorJob() + Dispatchers.Default) }
+        single<EventDispatcher> { DefaultEventDispatcher(LoggingEventErrorHandler()) }
+        single<EventBus> { DefaultEventBus(get(), get()) }
+    }
 }

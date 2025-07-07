@@ -5,6 +5,4 @@ data class Category(
     val nodeId: String,
     val name: String,
     var nextCheck: Long = 0L
-) {
-    fun toInfo() = CategoryInfo(gameId, nodeId, name)
-}
+)

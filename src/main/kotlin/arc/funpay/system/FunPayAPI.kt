@@ -2,10 +2,11 @@ package arc.funpay.system
 
 import arc.funpay.domain.account.Account
 import arc.funpay.domain.account.AccountInfo
+import arc.funpay.domain.chat.ChatMessage
 import arc.funpay.domain.common.Balance
 import arc.funpay.domain.common.Currency
-import arc.funpay.domain.common.RaiseResponse
-import arc.funpay.ext.StringExtensions
+import arc.funpay.domain.response.RaiseResponse
+import arc.funpay.ext.extract
 import arc.funpay.http.api.HttpClient
 import io.ktor.client.statement.*
 import io.ktor.http.*
@@ -16,9 +17,9 @@ import org.jsoup.parser.Parser
 
 class FunPayAPI(
     val client: HttpClient,
-    val account: Account,
-    val string: StringExtensions
+    val account: Account
 ) {
+
     fun getInfo(): AccountInfo = runBlocking {
         val html = client.get("/", cookies = mapOf("golden_key" to account.goldenKey)).bodyAsText()
 
@@ -33,10 +34,7 @@ class FunPayAPI(
         }
 
 
-        val username = with(string) {
-            html.extract("""<div class=\"user-link-name\">(.*?)<\/div>""")
-        }
-
+        val username = html.extract("""<div class=\"user-link-name\">(.*?)<\/div>""")
 
         val balances = Regex("""<span class="badge badge-balance">([\d.,]+)\s*([^\d\s<]+)</span>""")
             .findAll(html)
@@ -50,7 +48,28 @@ class FunPayAPI(
 
         AccountInfo(userId, username, primaryBalance)
     }
-    suspend fun sendMessage(chatNode: String, content: String) {
+
+    suspend fun getLastMessageInfo(chatNode: String): ChatMessage? {
+        val html = client.get(
+            "/chat/?node=$chatNode",
+            cookies = mapOf(
+                "golden_key" to account.goldenKey,
+                "PHPSESSID" to account.phpSessionId
+            )
+        ).bodyAsText()
+
+        val document = Jsoup.parse(html)
+        val messagesList = document.select(".chat-message-list .chat-msg-item")
+
+        val lastMessage = messagesList.lastOrNull() ?: return null
+
+        val author = lastMessage.selectFirst(".chat-msg-author-link")?.text()?.trim() ?: return null
+        val content = lastMessage.selectFirst(".chat-msg-text")?.text()?.trim() ?: return null
+
+        return ChatMessage(author, content)
+    }
+
+    suspend fun sendMessage(chatNode: Long, content: String) {
         val requestJson = buildJsonObject {
             put("action", "chat_message")
             putJsonObject("data") {
@@ -92,6 +111,7 @@ class FunPayAPI(
             )
         )
     }
+
     suspend fun getChatNodeByUsername(username: String): String? {
         val html = client.get("/chat/", cookies = mapOf(
             "golden_key" to account.goldenKey,
@@ -103,7 +123,7 @@ class FunPayAPI(
         for (contact in contacts) {
             val name = contact.selectFirst(".media-user-name")?.text()?.trim()
             if (name.equals(username, ignoreCase = true)) {
-                val href = contact.attr("href") // Например, https://funpay.com/chat/?node=161986257
+                val href = contact.attr("href")
                 val nodeId = Regex("""node=(\d+)""").find(href)?.groupValues?.get(1)
                 return nodeId
             }
@@ -112,42 +132,6 @@ class FunPayAPI(
         return null
     }
 
-    suspend fun getOrdersCount(): Pair<Int, Int> {
-        val cookies = mapOf("golden_key" to account.goldenKey)
-        val jsonRequest = buildJsonArray {
-            addJsonObject {
-                put("type", JsonPrimitive("orders_counters"))
-                put("id", JsonPrimitive(account.userId))
-                put("tag", JsonPrimitive(""))
-                put("data", JsonPrimitive(false))
-            }
-        }
-        val response = client.post(
-            endpoint = "/runner/",
-            cookies = cookies,
-            headers = mapOf(
-                HttpHeaders.Accept to "*/*",
-                HttpHeaders.ContentType to "application/x-www-form-urlencoded; charset=UTF-8",
-                "X-Requested-With" to "XMLHttpRequest"
-            ),
-            body = mapOf(
-                "objects" to jsonRequest.toString(),
-                "request" to "false"
-            )
-        )
-        val jsonData = with(string) {
-            val result = response.bodyAsText().parse()
-            Json.parseToJsonElement(result).jsonObject["objects"]
-                ?.jsonArray?.get(0)?.jsonObject?.get("data")?.jsonObject
-        } ?: return Pair(0, 0)
-
-        val buyer = jsonData["buyer"]?.jsonPrimitive?.int ?: 0
-        val seller = jsonData["seller"]?.jsonPrimitive?.int ?: 0
-        return Pair(buyer, seller)
-
-    }
-
-    @ExperimentalStdlibApi
     suspend fun refundOrder(orderId: String) {
         client.post(
             endpoint = "/orders/refund",

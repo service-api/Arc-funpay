@@ -3,19 +3,17 @@ package arc.funpay.ext
 import arc.funpay.common.api.JsonProcessor
 import arc.funpay.common.api.TextParser
 import arc.funpay.common.api.TimingParser
-import arc.funpay.di.api.DependencyContainer
-import arc.funpay.di.api.get
+import arc.funpay.di.ServiceLocator
+import org.koin.core.component.get
 
-class StringExtensions(val container: DependencyContainer) {
-    fun String.extract(regex: String, default: String = ""): String =
-        container.get<TextParser>().extractText(this, regex, default)
+fun String.extract(regex: String, default: String = ""): String =
+    ServiceLocator.get<TextParser>().extractText(this, regex, default)
 
-    fun String.parseTiming(): Long =
-        container.get<TimingParser>().parseToMillis(this)
+fun String.parseTiming(): Long =
+    ServiceLocator.get<TimingParser>().parseToMillis(this)
 
-    fun String.extractNumber(): Long =
-        container.get<TextParser>().extractNumber(this)
+fun String.extractNumber(): Long =
+    ServiceLocator.get<TextParser>().extractNumber(this)
 
-    fun String.parse(): String =
-        container.get<JsonProcessor>().parseAndEncode(this)
-}
+fun String.parse(): String =
+    ServiceLocator.get<JsonProcessor>().parseAndEncode(this)

@@ -48,7 +48,7 @@ class FunpayKtorClient(
         cookies: Map<String, String>,
         body: Map<String, String>
     ): HttpResponse {
-        return client.post("${config.baseUrl}/$endpoint") {
+        return client.post("${config.baseUrl}$endpoint") {
             headers {
                 headersBuilder.buildHeaders(this, headers, cookies)
             }

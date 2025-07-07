@@ -1,10 +1,11 @@
-package arc.funpay.event.impl.system
+package arc.funpay.event.impl
 
+import arc.funpay.domain.account.Account
 import arc.funpay.event.api.Event
 
 sealed interface SystemEvent : Event {
     data class ApplicationReady(
-        val accountId: Long
+        val account: Account
     ) : SystemEvent
 
     data class ApplicationStopping(

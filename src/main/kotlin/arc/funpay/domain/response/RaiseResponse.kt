@@ -1,4 +1,4 @@
-package arc.funpay.domain.common
+package arc.funpay.domain.response
 
 data class RaiseResponse(
     val isSuccess: Boolean,

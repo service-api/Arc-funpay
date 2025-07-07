@@ -1,4 +1,3 @@
-
 plugins {
     kotlin("jvm") version "2.2.0"
     kotlin("plugin.serialization") version "2.2.0"
@@ -9,21 +8,21 @@ base {
 }
 
 group = "arc.funpay"
-version = "1.0"
+version = "1.1"
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    implementation(rootProject.libs.ktor.core)
-    implementation(rootProject.libs.ktor.okhttp)
-    implementation(rootProject.libs.ktor.content)
-    implementation(rootProject.libs.ktor.serialization)
-    implementation(rootProject.libs.kotlinx.serialization)
-    implementation(rootProject.libs.jsoup)
-    implementation(rootProject.libs.slf4j)
-    implementation(rootProject.libs.koin)
+    implementation(libs.ktor.core)
+    implementation(libs.ktor.okhttp)
+    implementation(libs.ktor.content)
+    implementation(libs.ktor.serialization)
+    implementation(libs.kotlinx.serialization)
+    implementation(libs.jsoup)
+    implementation(libs.slf4j)
+    implementation(libs.koin)
 }
 
 kotlin {

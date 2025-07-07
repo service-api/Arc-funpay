@@ -8,32 +8,14 @@ import arc.funpay.common.impl.DefaultTimingParser
 import arc.funpay.common.impl.KotlinxJsonProcessor
 import arc.funpay.common.impl.RegexTextParser
 import arc.funpay.common.impl.SystemTimeProvider
-import arc.funpay.di.api.AbstractModule
-import arc.funpay.di.api.Binding
-import arc.funpay.di.api.get
-import arc.funpay.ext.StringExtensions
+import arc.funpay.di.api.ServiceModule
+import org.koin.dsl.module
 
-class CoreServicesModule : AbstractModule() {
-    override fun bindings(): List<Binding<*>> = listOf(
-        singleton<TimeProvider> {
-            SystemTimeProvider()
-        },
-
-        singleton<TextParser> {
-            RegexTextParser()
-        },
-
-        singleton<TimingParser> { container ->
-            DefaultTimingParser(container.get())
-        },
-
-        singleton<JsonProcessor> {
-            KotlinxJsonProcessor()
-        },
-
-        // Extensions
-        singleton { container ->
-            StringExtensions(container)
-        }
-    )
+class CoreServicesModule : ServiceModule {
+    override fun createModule() = module {
+        single<TimeProvider> { SystemTimeProvider() }
+        single<TextParser> { RegexTextParser() }
+        single<TimingParser> { DefaultTimingParser(get()) }
+        single<JsonProcessor> { KotlinxJsonProcessor() }
+    }
 }
