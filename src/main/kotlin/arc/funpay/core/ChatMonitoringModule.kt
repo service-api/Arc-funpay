@@ -3,7 +3,7 @@ package arc.funpay.core
 
 import arc.funpay.core.api.Module
 import arc.funpay.domain.account.Account
-import arc.funpay.event.impl.MessageEvent
+import arc.funpay.event.impl.ChatEvent
 import arc.funpay.http.api.HttpClient
 import io.ktor.client.statement.*
 import org.jsoup.Jsoup
@@ -28,7 +28,7 @@ class ChatMonitoringModule : Module() {
             if (oldChat != chat) {
                 api.getLastMessageInfo(nodeId)?.let { messageInfo ->
                     if (messageInfo.author != account.username) {
-                        eventBus.publish(MessageEvent.NewMessage(messageInfo.content))
+                        eventBus.publish(ChatEvent.NewMessage(messageInfo.content))
                     }
                 }
             }
