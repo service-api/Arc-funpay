@@ -2,7 +2,6 @@ package arc.funpay.system
 
 import arc.funpay.domain.account.Account
 import arc.funpay.domain.account.AccountInfo
-import arc.funpay.domain.category.Category
 import arc.funpay.domain.chat.ChatMessage
 import arc.funpay.domain.common.Balance
 import arc.funpay.domain.common.Currency
@@ -50,7 +49,7 @@ class FunPayAPI(
         AccountInfo(userId, username, primaryBalance)
     }
 
-    suspend fun getLastMessageInfo(chatNode: String): ChatMessage? {
+    suspend fun getLastMessageInfo(chatNode: Long): ChatMessage? {
         val html = client.get(
             "/chat/?node=$chatNode",
             cookies = mapOf(

@@ -13,7 +13,7 @@ class ChatMonitoringModule : Module() {
     val client by inject<HttpClient>()
     val account by inject<Account>()
 
-    private var chatLastMessage = emptyMap<String, String>()
+    private var chatLastMessage = emptyMap<Long, String>()
 
     override suspend fun onTick() {
         val newChats = getNewChats()
@@ -36,7 +36,7 @@ class ChatMonitoringModule : Module() {
         chatLastMessage = newChats
     }
 
-    suspend fun getNewChats(): Map<String, String> {
+    suspend fun getNewChats(): Map<Long, String> {
         val html = client.get(
             "/chat/",
             cookies = buildMap {
@@ -50,7 +50,7 @@ class ChatMonitoringModule : Module() {
             .mapNotNull { element ->
                 val nodeId = element.attr("data-id")
                 val lastMessage = element.selectFirst(".contact-item-message")?.text()?.trim().orEmpty()
-                if (lastMessage.isNotEmpty()) nodeId to lastMessage else null
+                if (lastMessage.isNotEmpty()) nodeId.toLong() to lastMessage else null
             }
             .toMap()
     }
