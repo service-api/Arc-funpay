@@ -7,7 +7,6 @@ import arc.funpay.event.impl.LotEvent
 import arc.funpay.event.impl.SystemEvent
 import arc.funpay.system.FunPayAPI
 
-@OptIn(ExperimentalStdlibApi::class)
 suspend fun main() {
     val app = FunpayApplication("")
 

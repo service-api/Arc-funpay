@@ -46,7 +46,7 @@ class LotsRaiseModule: Module() {
         try {
             val response = api.raiseLots(category.gameId, category.nodeId)
             category.nextCheck = if (response.isSuccess) {
-                if (response.message.contains("поднят") == true) {
+                if (response.message.contains("поднят")) {
                     eventBus.publish(LotEvent.LotsRaised(category, response.message))
                 }
                 calculateNextCheck(response.message)
