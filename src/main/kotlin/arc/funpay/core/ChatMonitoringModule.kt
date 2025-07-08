@@ -28,7 +28,7 @@ class ChatMonitoringModule : Module() {
             if (oldChat != chat) {
                 api.getLastMessageInfo(nodeId)?.let { messageInfo ->
                     if (messageInfo.author != account.username) {
-                        eventBus.publish(ChatEvent.NewMessage(messageInfo))
+                        eventBus.publish(ChatEvent.NewMessage(messageInfo.content, messageInfo.author))
                     }
                 }
             }
