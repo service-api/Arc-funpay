@@ -9,7 +9,7 @@ base {
 }
 
 group = "arc.funpay"
-version = "1.3"
+version = "1.0.0"
 
 repositories {
     mavenCentral()
